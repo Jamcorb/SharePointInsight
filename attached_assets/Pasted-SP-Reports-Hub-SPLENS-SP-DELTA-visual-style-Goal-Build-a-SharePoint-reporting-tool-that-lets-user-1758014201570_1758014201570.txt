@@ -1,0 +1,162 @@
+SP Reports Hub (SPLENS/SP DELTA visual style)
+Goal: Build a SharePoint reporting tool that lets users drag & drop libraries/lists from multiple sites & site collections into a single canvas, then generate collated, normalized reports across all selected sources. Handle schema differences (missing/extra columns), offer rich filters, pivot/aggregate views, and one-click exports (CSV/XLSX). Match the visual style of SPLENS / SP DELTA: clean, enterprise, dark/light, Tailwind + shadcn/ui, subtle motion.
+Tech Stack (must use)
+Frontend: React 18 + TypeScript + Vite, TailwindCSS, shadcn/ui (Radix), Framer Motion (micro-interactions), TanStack Table (data grid) + TanStack Query (data loading), DnD Kit (drag/drop), Recharts (charts), react-virtualized (large tables).
+Backend: Node.js + Express + TypeScript, Microsoft Graph SDK (SharePoint/Graph), PnPjs optional for SPO endpoints, Drizzle ORM + PostgreSQL, Zod for validation, Winston logging.
+Auth: Azure AD OAuth 2.0 (auth code + PKCE), MSAL (frontend) + backend token exchange. Multi-tenant: one tenant per workspace.
+Build/DevOps: Dockerfile, GitHub Actions CI (lint, build, tests), ESLint/Prettier, Husky + lint-staged.
+Export: exceljs (XLSX), json2csv.
+PDF (optional): @react-pdf/renderer for lightweight print reports.
+Branding / UI Spec (match SPLENS / SP DELTA)
+Aesthetic: minimal, enterprise, high contrast; rounded-2xl cards, soft shadows; grid-based layouts; roomy spacing.
+Components: shadcn/ui Cards, Button, DropdownMenu, Dialog, Tabs, Badge, Tooltip, Toast.
+Typography: system sans; weights for hierarchy; small caps in metadata pills.
+Colors: neutral base; primary accent from SPLENS palette (leave color tokens as CSS variables).
+Motion: Framer Motion for hover/press, panel slide-ins, and “snap” on drag-drop. Keep durations short (140–220ms).
+Core Features
+Connection & Discovery
+Sign in with Microsoft (Azure AD).
+Site/browser: search & browse SharePoint sites, site collections, subsites.
+List/library picker with infinite scroll and filters (Type: Document Library, List; Template; Content Type).
+Drag & Drop Canvas: drop sources to a “Report Builder” area.
+Schema Intelligence
+Fetch columns/fields per source (internal + display names, types).
+Build a global union schema across selected sources (column superset).
+Mark column presence per source (Present, Missing, Type mismatch).
+Smart type coercion (dates, numbers, choice → string, lookups → id/title expansion).
+Collated Dataset
+Stream/merge items from all sources into a normalized table (union schema).
+Add Source metadata columns: Site URL, Site Title, List Title, List Id, Item URL, Modified/Created, Author/Editor.
+Report Designer
+Column chooser (include/exclude, reorder, freeze).
+Filters (AND/OR), quick search, date ranges, choice multi-select.
+Column diff indicators (pill showing % coverage across sources).
+Saved Views (persisted to DB per user/tenant).
+Aggregations/Pivots: count, sum, avg, min, max, group by 1–3 fields.
+Charts (bar/line/pie) bound to current grouping/metrics.
+Exports & Sharing
+Export CSV, XLSX (multi-sheet: “Data”, “Schema Map”, “Source Coverage”).
+“Schema Coverage Report”: matrix of columns vs sources with Present/Missing.
+“Data Quality Report”: null density, type coercions performed, lookup expansion success.
+Shareable report links (signed, tenant-scoped).
+Scheduling (optional MVP+)
+Create a schedule (daily/weekly) to re-generate and save reports to SharePoint doc library or email as attachment.
+Performance
+Use delta paging & concurrency control, backoff for Graph throttling.
+Virtualized grid for 100k+ rows; streaming merges on backend.
+SharePoint/Graph Integration
+Scopes (minimum):
+Sites.Read.All, Files.Read.All, User.Read, offline_access
+(If needed for classic lists: AllSites.Read via legacy endpoints or ensure Graph list item coverage.)
+Key Endpoints (examples)
+List sites: GET /sites?search={query}
+Site by hostname/path: GET /sites/{hostname}:/sites/{sitePath}
+Lists in site: GET /sites/{siteId}/lists
+List fields: GET /sites/{siteId}/lists/{listId}/columns
+Items (paged): GET /sites/{siteId}/lists/{listId}/items?expand=fields&top=200
+Drives (document libraries): GET /sites/{siteId}/drives then /drives/{driveId}/root/children (or search)
+Drive item columns: map to list columns when library has content types.
+Normalization Rules
+Build union schema keyed by internalName (fallback: normalized displayName).
+Coerce per target type precedence:
+DateTime → ISO8601; Number → float; Boolean → true/false; Choice/MultiChoice → array of strings; Lookup → object {id,title}; Person → {id,displayName,email}; Taxonomy → {label, termGuid}; File → {name, url, size, contentType}.
+Track per-field coverage% and mismatch types.
+Data Model (PostgreSQL via Drizzle)
+tenants(id, name, domain, created_at)
+users(id, tenant_id, upn, name, email, roles, created_at)
+connections(id, tenant_id, authority, client_id, scopes, created_at)
+sources(id, tenant_id, site_id, site_url, list_id, list_title, type, created_at)
+reports(id, tenant_id, name, config_json, created_by, created_at, updated_at)
+report_runs(id, report_id, status, row_count, started_at, finished_at, summary_json)
+saved_views(id, report_id, user_id, name, columns_json, filters_json, sorts_json)
+schedules(id, report_id, cron, destination_spo_url, format, active)
+Backend API (Express + Zod)
+POST /api/auth/login (MSAL init) / GET /api/auth/callback
+GET /api/sites?query=... → discover sites
+GET /api/sites/:siteId/lists → lists & libraries
+GET /api/sources/schema (body: list of {siteId, listId}) → union schema + coverage matrix
+POST /api/reports/preview (body: sources[], columns[], filters, limit) → first N rows merged
+POST /api/reports/run → run full merge, returns report_runs.id
+GET /api/reports/:id/runs/:runId → status + summary
+POST /api/reports/export → returns CSV/XLSX (option: include schema/coverage sheets)
+POST /api/views | GET /api/views/:reportId
+POST /api/schedules | GET /api/schedules
+Include robust pagination, cancellation, and error surfaces for throttling (HTTP 429).
+Frontend Pages & Components
+/login (MSAL flow)
+/builder (main)
+Left Panel: Source Browser (site search, tree, list/library results; drag handles)
+Center Canvas: Dropped Sources (cards for each; removable; orderable)
+Right Panel: Report Designer
+Tabs: Columns | Filters | Group/Pivot | Charts | Preview
+Columns: union schema selector; presence badges; type chips; reorder; freeze; derive (e.g., “Year(Modified)”).
+Filters: builder with AND/OR; quick text search; saved filter sets.
+Pivot: group by 1–3 fields; aggregations (count/sum/avg/min/max); show totals.
+Charts: bind to pivot; choose chart type; small multiples.
+Preview: virtualized table; inline null/type warnings.
+Top Bar: Tenant switcher, Save View, Run Report, Export, Schedule (dropdown)
+/reports/:id (history, runs, exports)
+/settings (connection status, scopes, environment info)
+Micro-interactions:
+Source card “snap” when dropped; pulse badge for schema diff; toast on Graph throttling with retry.
+Export Specs
+CSV: UTF-8, comma, quoted as needed.
+XLSX (exceljs):
+Sheet 1: Data (selected columns, 100k+ rows safe)
+Sheet 2: Schema Map (columns with type, sources coverage %, mismatch notes)
+Sheet 3: Source Coverage (matrix: columns × sources; Present/Missing/Coerced)
+Auto-filters, freeze header row, basic number/date formats.
+Scheduling (optional MVP+)
+Cron UI presets (Daily 08:00; Weekly Mon 08:00).
+Destination: Save to SharePoint (choose site + library) using Graph upload; filename includes timestamp.
+Email summary (row count, coverage delta vs last run).
+Environment & Config
+Create .env:
+AZURE_AD_CLIENT_ID=
+AZURE_AD_CLIENT_SECRET=
+AZURE_AD_TENANT_ID=
+AZURE_AD_AUTHORITY=https://login.microsoftonline.com/common
+AZURE_AD_REDIRECT_URI=https://localhost:5173/auth/callback
+GRAPH_SCOPES=User.Read,offline_access,Sites.Read.All,Files.Read.All
+DATABASE_URL=postgres://...
+SESSION_SECRET=change_me
+Add a tenant-binding mechanism (store tenant id from id_token claim; segregate data by tenant_id).
+Edge Cases & Requirements
+Handle sites with huge libraries via paging & selective fields ($select) and $top batches.
+Respect user permissions: only list sites/lists user can read; no app-only data in MVP.
+Type mismatches must not crash preview/export; show warning badges and log details.
+Lookup/Person/Taxonomy optional expansion toggle (on = richer data, slower).
+Time zones: display in user’s local TZ; store UTC.
+Accessibility: keyboard nav for drag/drop alternatives; ARIA labels.
+Testing
+Unit: schema union, type coercion, coverage calc.
+Integration: Graph pagination & throttling backoff; large dataset exports.
+E2E: Login → build → preview → export (Playwright).
+Deliverables
+Full monorepo (client/server) with scripts:
+dev, build, start, lint, test, e2e
+Azure AD app registration instructions (readme).
+Seed script to mock sites/lists locally for offline dev.
+Sample saved report configs (JSON) for demos.
+CI pipeline with build + test + Docker image.
+Build Steps (Agent)
+Scaffold Vite React TS app + Express TS server, set up Tailwind, shadcn/ui, Framer Motion, TanStack.
+Implement MSAL auth on client; backend token exchange and Graph client with on-behalf-of flow.
+Build site/list discovery endpoints; UI browsers; drag/drop canvas.
+Implement schema union service (backend) with coverage matrix + types.
+Implement preview/merge stream and virtualized data grid.
+Add filters, pivots, charts.
+Implement CSV/XLSX export with schema/coverage sheets.
+Polish UI to SPLENS/SP DELTA style (cards, rounded 2xl, shadows, spacing).
+Add saved views & report runs; logging & error toasts.
+(Optional) Scheduling + SharePoint upload.
+Non-Goals (MVP)
+App-only (daemon) permissions.
+Write-back to SharePoint (except scheduled export upload).
+Full content type authoring.
+Success Criteria
+Drag & drop ≥5 sources across different sites.
+Generate a union schema with coverage badges.
+Preview 10k+ normalized rows smoothly (virtualized).
+Export XLSX with 3 sheets in under 30 seconds for 50k rows (local test).
+Clear UX parity with SPLENS/SP DELTA styling.
