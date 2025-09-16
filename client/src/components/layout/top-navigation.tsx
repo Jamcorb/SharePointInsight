@@ -132,7 +132,7 @@ export function TopNavigation({
                 <ChevronDown className="h-3 w-3 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-white border border-gray-200 shadow-lg">
               <div className="flex flex-col space-y-1 p-2">
                 <p className="text-sm font-medium" data-testid="text-user-name">{user.name}</p>
                 <p className="text-xs text-muted-foreground" data-testid="text-user-email">{user.email}</p>

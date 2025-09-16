@@ -63,7 +63,7 @@ export function LoadReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl h-[600px] flex flex-col">
+      <DialogContent className="sm:max-w-2xl h-[600px] flex flex-col bg-white dark:bg-white border border-gray-200 shadow-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <FileText className="h-5 w-5" />

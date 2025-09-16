@@ -51,13 +51,44 @@
   --spacing: 0.25rem;
 }
 
+/* Force white backgrounds for all modals, dialogs, and popups */
+[data-radix-popper-content-wrapper],
+[data-radix-dropdown-menu-content],
+[data-radix-context-menu-content],
+[data-radix-dialog-content],
+[data-radix-popover-content],
+[data-radix-tooltip-content] {
+  background-color: white !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+/* Ensure text remains readable on white backgrounds */
+[data-radix-popper-content-wrapper] *,
+[data-radix-dropdown-menu-content] *,
+[data-radix-context-menu-content] *,
+[data-radix-dialog-content] *,
+[data-radix-popover-content] *,
+[data-radix-tooltip-content] * {
+  color: #374151 !important;
+}
+
+/* Override for muted text to remain readable */
+[data-radix-popper-content-wrapper] .text-muted-foreground,
+[data-radix-dropdown-menu-content] .text-muted-foreground,
+[data-radix-context-menu-content] .text-muted-foreground,
+[data-radix-dialog-content] .text-muted-foreground,
+[data-radix-popover-content] .text-muted-foreground,
+[data-radix-tooltip-content] .text-muted-foreground {
+  color: #6b7280 !important;
+}
+
 .dark {
   --background: hsl(210, 11%, 6%);
   --foreground: hsl(210, 11%, 98%);
   --card: hsl(210, 11%, 9%);
   --card-foreground: hsl(210, 11%, 95%);
-  --popover: hsl(210, 11%, 9%);
-  --popover-foreground: hsl(210, 11%, 95%);
+  --popover: hsl(0, 0%, 100%); /* Force white background for popups */
+  --popover-foreground: hsl(210, 11%, 15%); /* Dark text on white background */
   --primary: hsl(210, 100%, 60%);
   --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(210, 11%, 13%);
