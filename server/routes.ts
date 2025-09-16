@@ -36,6 +36,15 @@ const exportRequestSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint (no auth required)
+  app.get("/api/health", async (req, res) => {
+    res.json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development" 
+    });
+  });
+
   // Authentication check endpoint
   app.get("/api/auth/me", requireAuth, async (req: AuthenticatedRequest, res) => {
     res.json({

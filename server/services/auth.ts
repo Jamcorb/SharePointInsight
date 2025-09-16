@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { storage } from "../storage";
+import { azureAdValidator, TokenValidationError } from "./jwt-validator";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -26,41 +27,77 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
 
     const token = authHeader.split(" ")[1];
     
-    // In a real implementation, you would validate the Azure AD token
-    // For now, we'll decode it assuming it's valid
-    const decoded = jwt.decode(token) as any;
+    // Validate Azure AD JWT token with proper security checks
+    let validatedPayload;
+    try {
+      validatedPayload = await azureAdValidator.validateToken(token, {
+        // Require minimum scopes for SharePoint/Graph access
+        requiredScopes: ["User.Read"],
+      });
+    } catch (validationError) {
+      console.error("JWT validation failed:", validationError);
+      
+      // In production, provide generic error messages to avoid information leakage
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(401).json({ error: "Authentication failed" });
+      }
+      
+      // In development, return specific error messages for better debugging
+      if (validationError instanceof TokenValidationError) {
+        return res.status(401).json({ error: "Invalid token: " + validationError.message });
+      }
+      return res.status(401).json({ error: "Token validation failed" });
+    }
+
+    // Extract user information from validated token
+    const userInfo = azureAdValidator.extractUserInfo(validatedPayload);
     
-    if (!decoded?.upn) {
-      return res.status(401).json({ error: "Invalid token format" });
+    if (!userInfo.upn) {
+      return res.status(401).json({ 
+        error: process.env.NODE_ENV === 'production' 
+          ? "Authentication failed" 
+          : "Token missing user principal name" 
+      });
     }
 
     // Get or create user
-    let user = await storage.getUserByUpn(decoded.upn);
+    let user = await storage.getUserByUpn(userInfo.upn);
     if (!user) {
       // Extract tenant from UPN domain
-      const domain = decoded.upn.split("@")[1];
+      const domain = userInfo.upn.split("@")[1];
       let tenant = await storage.getTenantByDomain(domain);
       
       if (!tenant) {
         tenant = await storage.createTenant({
           name: domain,
           domain: domain,
-          azureTenantId: decoded.tid || "unknown",
+          azureTenantId: userInfo.tenantId,
         });
       }
 
       user = await storage.createUser({
         tenantId: tenant.id,
-        upn: decoded.upn,
-        name: decoded.name || decoded.upn,
-        email: decoded.email || decoded.upn,
-        roles: [],
+        upn: userInfo.upn,
+        name: userInfo.name,
+        email: userInfo.email,
+        roles: userInfo.roles,
       });
     }
 
     const tenant = await storage.getTenant(user.tenantId);
     if (!tenant) {
-      return res.status(500).json({ error: "User tenant not found" });
+      return res.status(500).json({ 
+        error: process.env.NODE_ENV === 'production' 
+          ? "Internal error" 
+          : "User tenant not found" 
+      });
+    }
+
+    // Verify the token's tenant matches the user's tenant
+    if (tenant.azureTenantId !== userInfo.tenantId) {
+      console.warn(`Token tenant ID (${userInfo.tenantId}) does not match user's stored tenant ID (${tenant.azureTenantId})`);
+      // Update tenant ID if it has changed
+      await storage.updateTenant(tenant.id, { azureTenantId: userInfo.tenantId });
     }
 
     req.user = {
