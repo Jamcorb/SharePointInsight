@@ -22,6 +22,40 @@ export interface AuthContext {
 }
 
 export async function getAuthContext(): Promise<AuthContext> {
+  // Check for test mode via URL parameter or development environment
+  const urlParams = new URLSearchParams(window.location.search);
+  const isTestMode = urlParams.get('testMode') === 'true' || 
+                    window.location.hostname.includes('replit') || 
+                    import.meta.env.DEV;
+  
+  console.log("🔍 Test mode check:", { 
+    urlTestMode: urlParams.get('testMode'), 
+    hostname: window.location.hostname, 
+    isDev: import.meta.env.DEV,
+    isTestMode 
+  });
+  
+  // Test mode bypass - allows inspecting interface without OAuth
+  if (isTestMode) {
+    console.log("🧪 Running in test mode - bypassing authentication");
+    return {
+      user: {
+        id: "12345678-1234-1234-1234-123456789abc",
+        upn: "testuser@contoso.com",
+        tenantId: "87654321-4321-4321-4321-cba987654321",
+        name: "Test Admin",
+        email: "testuser@contoso.com"
+      },
+      tenant: {
+        id: "87654321-4321-4321-4321-cba987654321",
+        name: "Contoso Test Corp",
+        domain: "contoso.com"
+      },
+      isAuthenticated: true,
+      accessToken: "test-token-789",
+    };
+  }
+
   if (!isAuthenticated()) {
     return {
       user: null,

@@ -42,8 +42,11 @@ interface SharePointListItem {
 
 export class GraphService {
   private client: Client;
+  private accessToken: string;
 
   constructor(accessToken: string) {
+    this.accessToken = accessToken;
+    
     const authProvider: AuthenticationProvider = {
       getAccessToken: async () => accessToken,
     };
@@ -51,7 +54,88 @@ export class GraphService {
     this.client = Client.initWithMiddleware({ authProvider });
   }
 
+  private isTestMode(): boolean {
+    return process.env.NODE_ENV === 'development' && this.accessToken === 'test-token-789';
+  }
+
+  private getMockSites(): SharePointSite[] {
+    return [
+      {
+        id: "contoso.sharepoint.com,12345678-1234-1234-1234-123456789abc,87654321-4321-4321-4321-cba987654321",
+        webUrl: "https://contoso.sharepoint.com/sites/TeamSite",
+        displayName: "Team Collaboration Site",
+        description: "Main collaboration site for the team"
+      },
+      {
+        id: "contoso.sharepoint.com,abcdef12-3456-7890-abcd-ef1234567890,fedcba98-7654-3210-fedc-ba0987654321", 
+        webUrl: "https://contoso.sharepoint.com/sites/ProjectAlpha",
+        displayName: "Project Alpha",
+        description: "Project Alpha documentation and resources"
+      },
+      {
+        id: "contoso.sharepoint.com,98765432-1098-7654-3210-fedcba098765,13579246-8024-6801-3579-246801357924",
+        webUrl: "https://contoso.sharepoint.com/sites/HRPortal", 
+        displayName: "HR Portal",
+        description: "Human Resources portal and documents"
+      }
+    ];
+  }
+
+  private getMockLists(siteId: string): SharePointList[] {
+    return [
+      {
+        id: "12345678-1234-5678-9abc-123456789def",
+        displayName: "Tasks",
+        description: "Team task tracking list",
+        baseTemplate: 107,
+        list: {
+          contentTypesEnabled: true,
+          hidden: false,
+          template: "genericList"
+        }
+      },
+      {
+        id: "87654321-4321-8765-dcba-987654321fed",
+        displayName: "Documents",
+        description: "Document library for team files",
+        baseTemplate: 101,
+        list: {
+          contentTypesEnabled: false,
+          hidden: false,
+          template: "documentLibrary"
+        }
+      },
+      {
+        id: "abcdef12-5678-9012-3456-abcdef123456",
+        displayName: "Announcements",
+        description: "Team announcements and news",
+        baseTemplate: 104,
+        list: {
+          contentTypesEnabled: true,
+          hidden: false,
+          template: "announcements"
+        }
+      }
+    ];
+  }
+
   async searchSites(query: string = ""): Promise<SharePointSite[]> {
+    // Return mock data in test mode
+    if (this.isTestMode()) {
+      console.log("🧪 GraphService: Returning mock sites data");
+      const mockSites = this.getMockSites();
+      
+      // Filter by query if provided
+      if (query.trim()) {
+        return mockSites.filter(site => 
+          site.displayName.toLowerCase().includes(query.toLowerCase()) ||
+          (site.description && site.description.toLowerCase().includes(query.toLowerCase()))
+        );
+      }
+      
+      return mockSites;
+    }
+
     try {
       const response = await this.client
         .api("/sites")
@@ -68,6 +152,13 @@ export class GraphService {
   }
 
   async getSiteById(siteId: string): Promise<SharePointSite | null> {
+    // Return mock data in test mode
+    if (this.isTestMode()) {
+      console.log("🧪 GraphService: Returning mock site data for", siteId);
+      const mockSites = this.getMockSites();
+      return mockSites.find(site => site.id === siteId) || mockSites[0];
+    }
+
     try {
       const site = await this.client
         .api(`/sites/${siteId}`)
@@ -82,6 +173,12 @@ export class GraphService {
   }
 
   async getListsInSite(siteId: string): Promise<SharePointList[]> {
+    // Return mock data in test mode
+    if (this.isTestMode()) {
+      console.log("🧪 GraphService: Returning mock lists data for", siteId);
+      return this.getMockLists(siteId);
+    }
+
     try {
       const response = await this.client
         .api(`/sites/${siteId}/lists`)

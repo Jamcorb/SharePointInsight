@@ -27,6 +27,28 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
 
     const token = authHeader.split(" ")[1];
     
+    // Test mode bypass for development
+    if (process.env.NODE_ENV === 'development' && token === 'test-token-789') {
+      console.log("🧪 Backend running in test mode - bypassing authentication");
+      
+      // Create mock user and tenant for testing with proper UUID format
+      req.user = {
+        id: "12345678-1234-1234-1234-123456789abc",
+        upn: "testuser@contoso.com",
+        tenantId: "87654321-4321-4321-4321-cba987654321",
+        name: "Test Admin",
+        email: "testuser@contoso.com"
+      };
+      
+      req.tenant = {
+        id: "87654321-4321-4321-4321-cba987654321",
+        name: "Contoso Test Corp",
+        domain: "contoso.com"
+      };
+      
+      return next();
+    }
+    
     // Validate Azure AD JWT token with proper security checks
     let validatedPayload;
     try {
@@ -78,8 +100,8 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
       user = await storage.createUser({
         tenantId: tenant.id,
         upn: userInfo.upn,
-        name: userInfo.name,
-        email: userInfo.email,
+        name: userInfo.name || userInfo.upn.split("@")[0],
+        email: userInfo.email || userInfo.upn,
         roles: userInfo.roles,
       });
     }
