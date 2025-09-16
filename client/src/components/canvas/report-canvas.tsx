@@ -61,10 +61,10 @@ export function ReportCanvas({
       if (!exists) {
         onSourceAdded({
           ...sourceData,
-          // Mock data - in real app, this would come from the API
-          itemCount: Math.floor(Math.random() * 5000) + 100,
-          coverage: Math.floor(Math.random() * 40) + 60,
-          uniqueColumns: Math.floor(Math.random() * 10) + 1,
+          // Metadata will be fetched async when needed by the builder page
+          itemCount: 0,
+          coverage: 0,
+          uniqueColumns: 0,
         });
       }
     } catch (error) {

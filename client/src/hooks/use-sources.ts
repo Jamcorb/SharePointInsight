@@ -52,6 +52,27 @@ export function useSources({ accessToken }: UseSourcesProps) {
     });
   };
 
+  // Get list metadata
+  const useListMetadata = (siteId: string, listId: string) => {
+    return useQuery({
+      queryKey: ["/api/sites", siteId, "lists", listId, "metadata"],
+      queryFn: async () => {
+        if (!accessToken) throw new Error("No access token");
+        
+        const response = await fetch(`/api/sites/${siteId}/lists/${listId}/metadata`, {
+          headers: createAuthHeaders(accessToken),
+        });
+        
+        if (!response.ok) throw new Error("Failed to fetch list metadata");
+        
+        const data = await response.json();
+        return data as { itemCount: number; columnCount: number; columns: number };
+      },
+      enabled: !!accessToken && !!siteId && !!listId,
+      staleTime: 10 * 60 * 1000, // 10 minutes - metadata changes infrequently
+    });
+  };
+
   // Get tenant sources
   const useTenantSources = () => {
     return useQuery({
@@ -76,6 +97,7 @@ export function useSources({ accessToken }: UseSourcesProps) {
   return {
     useSearchSites,
     useListsInSite,
+    useListMetadata,
     useTenantSources,
   };
 }

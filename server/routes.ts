@@ -93,6 +93,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get list metadata (item count and column count)
+  app.get("/api/sites/:siteId/lists/:listId/metadata", requireAuth, validateTenant, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { siteId, listId } = req.params;
+      const accessToken = req.headers.authorization?.split(" ")[1];
+      
+      if (!accessToken) {
+        return res.status(401).json({ error: "Access token required" });
+      }
+
+      const graphService = await createGraphService(accessToken);
+      
+      // Fetch metadata in parallel
+      const [itemCount, columns] = await Promise.all([
+        graphService.getListItemCount(siteId, listId),
+        graphService.getListColumns(siteId, listId)
+      ]);
+      
+      const columnCount = columns.filter(col => !col.hidden).length;
+      
+      res.json({ 
+        itemCount, 
+        columnCount,
+        columns: columnCount 
+      });
+    } catch (error) {
+      console.error("List metadata fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch list metadata" });
+    }
+  });
+
   // Union schema generation
   app.post("/api/sources/schema", requireAuth, validateTenant, async (req: AuthenticatedRequest, res) => {
     try {
@@ -390,6 +421,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Reports fetch error:", error);
       res.status(500).json({ error: "Failed to fetch reports" });
+    }
+  });
+
+  // Create a new report
+  app.post("/api/reports", requireAuth, validateTenant, async (req: AuthenticatedRequest, res) => {
+    try {
+      const reportData = {
+        tenantId: req.tenant!.id,
+        createdBy: req.user!.id,
+        ...req.body,
+      };
+      
+      const report = await storage.createReport(reportData);
+      res.json({ report });
+    } catch (error) {
+      console.error("Report creation error:", error);
+      res.status(500).json({ error: "Failed to create report" });
+    }
+  });
+
+  // Get a specific report
+  app.get("/api/reports/:reportId", requireAuth, validateTenant, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { reportId } = req.params;
+      const report = await storage.getReport(reportId);
+      
+      if (!report || report.tenantId !== req.tenant!.id) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+      
+      res.json({ report });
+    } catch (error) {
+      console.error("Report fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch report" });
+    }
+  });
+
+  // Update a report
+  app.put("/api/reports/:reportId", requireAuth, validateTenant, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { reportId } = req.params;
+      const existingReport = await storage.getReport(reportId);
+      
+      if (!existingReport || existingReport.tenantId !== req.tenant!.id) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+      
+      const updateData = {
+        ...req.body,
+        updatedAt: new Date(),
+      };
+      
+      const report = await storage.updateReport(reportId, updateData);
+      res.json({ report });
+    } catch (error) {
+      console.error("Report update error:", error);
+      res.status(500).json({ error: "Failed to update report" });
+    }
+  });
+
+  // Delete a report
+  app.delete("/api/reports/:reportId", requireAuth, validateTenant, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { reportId } = req.params;
+      const existingReport = await storage.getReport(reportId);
+      
+      if (!existingReport || existingReport.tenantId !== req.tenant!.id) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+      
+      await storage.deleteReport(reportId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Report deletion error:", error);
+      res.status(500).json({ error: "Failed to delete report" });
     }
   });
 

@@ -1,12 +1,16 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useSchema } from "@/hooks/use-schema";
+import { useReports } from "@/hooks/use-reports";
 import { TopNavigation } from "@/components/layout/top-navigation";
 import { SourceBrowser } from "@/components/sources/source-browser";
 import { ReportCanvas } from "@/components/canvas/report-canvas";
 import { ReportDesigner } from "@/components/designer/report-designer";
+import { SaveReportDialog } from "@/components/dialogs/save-report-dialog";
+import { LoadReportDialog } from "@/components/dialogs/load-report-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { UnionSchema, ReportConfig } from "@/types/schema";
+import { Report } from "@shared/schema";
 
 interface DroppedSource {
   siteId: string;
@@ -23,6 +27,7 @@ interface DroppedSource {
 export default function Builder() {
   const { user, tenant, logout, accessToken } = useAuth();
   const { generateUnionSchema, generatePreview, exportReport } = useSchema({ accessToken });
+  const { useReportsList, createReport, updateReport, deleteReport } = useReports({ accessToken });
   const { toast } = useToast();
   
   const [droppedSources, setDroppedSources] = useState<DroppedSource[]>([]);
@@ -31,6 +36,15 @@ export default function Builder() {
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  
+  // Report persistence state
+  const [currentReportId, setCurrentReportId] = useState<string | null>(null);
+  const [currentReportName, setCurrentReportName] = useState<string>("");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
+
+  // Load reports list
+  const { data: reportsList = [], isLoading: isLoadingReports } = useReportsList();
 
   const handleSourceAdded = useCallback(async (source: DroppedSource) => {
     setDroppedSources(prev => [...prev, source]);
@@ -191,12 +205,95 @@ export default function Builder() {
     }
   }, [droppedSources, selectedColumns, exportReport, toast]);
 
-  const handleSaveView = useCallback(() => {
-    toast({
-      title: "Save view",
-      description: "Saved view functionality coming soon",
-    });
+  // Save report functionality
+  const handleSaveReport = useCallback(async (name: string, description: string) => {
+    if (droppedSources.length === 0) {
+      throw new Error("No sources to save");
+    }
+
+    const reportConfig = {
+      sources: droppedSources,
+      unionSchema,
+      selectedColumns,
+      previewData: [], // Don't save preview data
+    };
+
+    if (currentReportId) {
+      // Update existing report
+      await updateReport.mutateAsync({
+        reportId: currentReportId,
+        updates: {
+          name,
+          description,
+          configJson: reportConfig,
+        },
+      });
+      setCurrentReportName(name);
+    } else {
+      // Create new report
+      const newReport = await createReport.mutateAsync({
+        name,
+        description,
+        configJson: reportConfig,
+      });
+      setCurrentReportId(newReport.id);
+      setCurrentReportName(name);
+    }
+  }, [droppedSources, unionSchema, selectedColumns, currentReportId, createReport, updateReport]);
+
+  // Load report functionality
+  const handleLoadReport = useCallback(async (report: Report) => {
+    try {
+      const config = report.configJson as any;
+      
+      // Restore report state
+      setDroppedSources(config.sources || []);
+      setUnionSchema(config.unionSchema || null);
+      setSelectedColumns(config.selectedColumns || []);
+      setPreviewData([]);
+      setCurrentReportId(report.id);
+      setCurrentReportName(report.name);
+      
+      toast({
+        title: "Report loaded",
+        description: `Report "${report.name}" has been loaded successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Load failed",
+        description: "Failed to load report. Please try again.",
+        variant: "destructive",
+      });
+    }
   }, [toast]);
+
+  // Delete report functionality
+  const handleDeleteReport = useCallback(async (reportId: string) => {
+    try {
+      await deleteReport.mutateAsync(reportId);
+      
+      // Clear current report if it was deleted
+      if (currentReportId === reportId) {
+        setCurrentReportId(null);
+        setCurrentReportName("");
+      }
+      
+      toast({
+        title: "Report deleted",
+        description: "Report has been deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete report. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [currentReportId, deleteReport, toast]);
+
+  const handleSaveView = useCallback(() => {
+    setShowSaveDialog(true);
+  }, []);
 
   if (!user || !tenant || !accessToken) {
     return null;
@@ -207,7 +304,9 @@ export default function Builder() {
       <TopNavigation
         user={user}
         tenant={tenant}
+        currentReportName={currentReportName}
         onSaveView={handleSaveView}
+        onLoadReport={() => setShowLoadDialog(true)}
         onRunReport={handleRunReport}
         onExport={handleExport}
         onLogout={logout}
@@ -232,6 +331,24 @@ export default function Builder() {
           isLoading={isGeneratingSchema || isGeneratingPreview}
         />
       </div>
+
+      <SaveReportDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        onSave={handleSaveReport}
+        isLoading={createReport.isPending || updateReport.isPending}
+        defaultName={currentReportName}
+      />
+
+      <LoadReportDialog
+        open={showLoadDialog}
+        onOpenChange={setShowLoadDialog}
+        reports={reportsList}
+        isLoading={isLoadingReports}
+        onLoadReport={handleLoadReport}
+        onDeleteReport={handleDeleteReport}
+        isDeleting={deleteReport.isPending}
+      />
     </div>
   );
 }

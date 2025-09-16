@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { SourceCard } from "./source-card";
+import { SourceCardWithMetadata } from "./source-card-with-metadata";
 import { useSources } from "@/hooks/use-sources";
 import { SharePointSite, SharePointList } from "@/types/sharepoint";
 import { Search, Filter, List, Folder, Globe, ChevronDown, ChevronRight } from "lucide-react";
@@ -234,14 +234,11 @@ function SiteSection({
               </div>
             ) : (
               filteredLists.map((list) => (
-                <SourceCard
+                <SourceCardWithMetadata
                   key={list.id}
                   site={site}
                   list={list}
-                  // Note: In a real app, you'd fetch these from the API
-                  itemCount={Math.floor(Math.random() * 5000) + 100}
-                  columnCount={Math.floor(Math.random() * 20) + 5}
-                  coverage={Math.floor(Math.random() * 40) + 60}
+                  accessToken={accessToken}
                 />
               ))
             )}
