@@ -1,0 +1,13 @@
+[Info] Successfully preconnected to https://fonts.googleapis.com/
+[Info] Successfully preconnected to https://fonts.gstatic.com/
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 14:43:46 GMT] : [] : @azure/msal-browser@4.22.1 : Info - MSAL.js was last initialized by version: 4.22.1" (index-BlTYuth0.js, line 244)
+[Log] ✅ MSAL initialized successfully (index-BlTYuth0.js, line 244)
+[Error] Failed to load resource: the server responded with a status of 400 () (token, line 0)
+[Error] MSAL initialization failed: – ServerError: invalid_request: Error(s): 9002326 - Timestamp: 2025-09-17 14:43:46Z - Description: AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type. Request origin: 'https://insight.splens.app'. Trace ID: 1ca64fbb-af66-419a-862c-2afcb537b900 Correlation ID: 01995821-99a6-745e-b619-313c1091f1ba Timestamp: 2025-09-17 14:43:46Z - Correlation ID: 01995821-99a6-745e-b619-313c1091f1ba - Trace ID: 1ca64fbb-af66-419a-862c-2afcb537b900
+ServerError: invalid_request: Error(s): 9002326 - Timestamp: 2025-09-17 14:43:46Z - Description: AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type. Request origin: 'https://insight.splens.app'. Trace ID: 1ca64fbb-af66-419a-862c-2afcb537b900 Correlation ID: 01995821-99a6-745e-b619-313c1091f1ba Timestamp: 2025-09-17 14:43:46Z - Correlation ID: 01995821-99a6-745e-b619-313c1091f1ba - Trace ID: 1ca64fbb-af66-419a-862c-2afcb537b900
+	(anonymous function) (index-BlTYuth0.js:244:189313)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 14:43:46 GMT] : [] : @azure/msal-browser@4.22.1 : Info - initialize has already been called, exiting early." (index-BlTYuth0.js, line 244)
+[Log] ✅ MSAL initialized successfully (index-BlTYuth0.js, line 244)
+[Error] MSAL initialization failed:
+ServerError: invalid_request: Error(s): 9002326 - Timestamp: 2025-09-17 14:43:46Z - Description: AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type. Request origin: 'https://insight.splens.app'. Trace ID: 1ca64fbb-af66-419a-862c-2afcb537b900 Correlation ID: 01995821-99a6-745e-b619-313c1091f1ba Timestamp: 2025-09-17 14:43:46Z - Correlation ID: 01995821-99a6-745e-b619-313c1091f1ba - Trace ID: 1ca64fbb-af66-419a-862c-2afcb537b900
+	(anonymous function) (index-BlTYuth0.js:244:189313)
