@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useSchema } from "@/hooks/use-schema";
 import { useReports } from "@/hooks/use-reports";
 import { TopNavigation } from "@/components/layout/top-navigation";
+import { Footer } from "@/components/layout/footer";
 import { SourceBrowser } from "@/components/sources/source-browser";
 import { ReportCanvas } from "@/components/canvas/report-canvas";
 import { ReportDesigner } from "@/components/designer/report-designer";
@@ -331,6 +332,8 @@ export default function Builder() {
           isLoading={isGeneratingSchema || isGeneratingPreview}
         />
       </div>
+
+      <Footer version="1.0.0" />
 
       <SaveReportDialog
         open={showSaveDialog}
