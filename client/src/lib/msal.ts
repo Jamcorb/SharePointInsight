@@ -5,10 +5,34 @@ const msalConfig: Configuration = {
     clientId: import.meta.env.VITE_AZURE_AD_CLIENT_ID!.trim(),
     authority: import.meta.env.VITE_AZURE_AD_AUTHORITY!.trim(),
     redirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
+    postLogoutRedirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
+    navigateToLoginRequestUrl: false, // Important for SPA
   },
   cache: {
     cacheLocation: "sessionStorage",
     storeAuthStateInCookie: false,
+  },
+  system: {
+    loggerOptions: {
+      loggerCallback: (level: any, message: string, containsPii: boolean) => {
+        if (containsPii) return;
+        switch (level) {
+          case 0: // Error
+            console.error("🔴 MSAL Error:", message);
+            break;
+          case 1: // Warning
+            console.warn("🟡 MSAL Warning:", message);
+            break;
+          case 2: // Info
+            console.info("🔵 MSAL Info:", message);
+            break;
+          case 3: // Verbose
+            console.log("🟢 MSAL Verbose:", message);
+            break;
+        }
+      },
+      piiLoggingEnabled: false,
+    },
   },
 };
 
