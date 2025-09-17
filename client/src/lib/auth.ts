@@ -22,41 +22,10 @@ export interface AuthContext {
 }
 
 export async function getAuthContext(): Promise<AuthContext> {
-  // Check for test mode via URL parameter or development environment
-  const urlParams = new URLSearchParams(window.location.search);
-  const isTestMode = urlParams.get('testMode') === 'true' || 
-                    window.location.hostname.includes('replit') || 
-                    import.meta.env.DEV;
+  console.log("🔍 Getting authentication context");
   
-  console.log("🔍 Test mode check:", { 
-    urlTestMode: urlParams.get('testMode'), 
-    hostname: window.location.hostname, 
-    isDev: import.meta.env.DEV,
-    isTestMode 
-  });
-  
-  // Test mode bypass - allows inspecting interface without OAuth
-  if (isTestMode) {
-    console.log("🧪 Running in test mode - bypassing authentication");
-    return {
-      user: {
-        id: "12345678-1234-1234-1234-123456789abc",
-        upn: "testuser@contoso.com",
-        tenantId: "87654321-4321-4321-4321-cba987654321",
-        name: "Test Admin",
-        email: "testuser@contoso.com"
-      },
-      tenant: {
-        id: "87654321-4321-4321-4321-cba987654321",
-        name: "Contoso Test Corp",
-        domain: "contoso.com"
-      },
-      isAuthenticated: true,
-      accessToken: "test-token-789",
-    };
-  }
-
   if (!isAuthenticated()) {
+    console.log("⚠️ User not authenticated");
     return {
       user: null,
       tenant: null,
@@ -68,6 +37,7 @@ export async function getAuthContext(): Promise<AuthContext> {
   try {
     const accessToken = await getAccessTokenSilent();
     if (!accessToken) {
+      console.warn("⚠️ Failed to acquire access token");
       return {
         user: null,
         tenant: null,
@@ -75,6 +45,8 @@ export async function getAuthContext(): Promise<AuthContext> {
         accessToken: null,
       };
     }
+
+    console.log("✅ Access token acquired, verifying with backend");
 
     // Verify authentication with backend
     const response = await fetch("/api/auth/me", {
@@ -84,10 +56,13 @@ export async function getAuthContext(): Promise<AuthContext> {
     });
 
     if (!response.ok) {
-      throw new Error("Authentication verification failed");
+      const errorText = await response.text();
+      console.error("❌ Authentication verification failed:", response.status, errorText);
+      throw new Error(`Authentication verification failed: ${response.status}`);
     }
 
     const { user, tenant } = await response.json();
+    console.log("✅ Authentication context verified successfully");
 
     return {
       user,
@@ -96,7 +71,7 @@ export async function getAuthContext(): Promise<AuthContext> {
       accessToken,
     };
   } catch (error) {
-    console.error("Auth context error:", error);
+    console.error("❌ Auth context error:", error);
     return {
       user: null,
       tenant: null,

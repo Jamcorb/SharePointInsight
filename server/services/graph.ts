@@ -43,6 +43,12 @@ interface SharePointListItem {
 export class GraphService {
   private client: Client;
   private accessToken: string;
+  private requestCount = 0;
+  private lastResetTime = Date.now();
+  private readonly REQUEST_LIMIT = 200; // per minute
+  private readonly RESET_INTERVAL = 60000; // 1 minute
+  private readonly MAX_RETRIES = 3;
+  private readonly BASE_DELAY = 1000; // 1 second
 
   constructor(accessToken: string) {
     this.accessToken = accessToken;
@@ -54,132 +60,110 @@ export class GraphService {
     this.client = Client.initWithMiddleware({ authProvider });
   }
 
-  private isTestMode(): boolean {
-    return process.env.NODE_ENV === 'development' && this.accessToken === 'test-token-789';
+  /**
+   * Smart throttling to prevent quota exhaustion
+   */
+  private async throttleRequest(): Promise<void> {
+    const now = Date.now();
+    
+    // Reset counter every minute
+    if (now - this.lastResetTime > this.RESET_INTERVAL) {
+      this.requestCount = 0;
+      this.lastResetTime = now;
+    }
+    
+    // If approaching limit, add delay
+    if (this.requestCount > this.REQUEST_LIMIT * 0.8) {
+      const delay = Math.min(2000, (this.requestCount - this.REQUEST_LIMIT * 0.8) * 100);
+      console.log(`⏱️ Throttling request, waiting ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    
+    this.requestCount++;
   }
 
-  private getMockSites(): SharePointSite[] {
-    return [
-      {
-        id: "contoso.sharepoint.com,12345678-1234-1234-1234-123456789abc,87654321-4321-4321-4321-cba987654321",
-        webUrl: "https://contoso.sharepoint.com/sites/TeamSite",
-        displayName: "Team Collaboration Site",
-        description: "Main collaboration site for the team"
-      },
-      {
-        id: "contoso.sharepoint.com,abcdef12-3456-7890-abcd-ef1234567890,fedcba98-7654-3210-fedc-ba0987654321", 
-        webUrl: "https://contoso.sharepoint.com/sites/ProjectAlpha",
-        displayName: "Project Alpha",
-        description: "Project Alpha documentation and resources"
-      },
-      {
-        id: "contoso.sharepoint.com,98765432-1098-7654-3210-fedcba098765,13579246-8024-6801-3579-246801357924",
-        webUrl: "https://contoso.sharepoint.com/sites/HRPortal", 
-        displayName: "HR Portal",
-        description: "Human Resources portal and documents"
+  /**
+   * Execute API request with retry logic and throttling
+   */
+  private async executeWithRetry<T>(operation: () => Promise<T>, context: string): Promise<T> {
+    let lastError: Error | undefined;
+    
+    for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+      try {
+        await this.throttleRequest();
+        return await operation();
+      } catch (error: any) {
+        lastError = error;
+        
+        // Check if it's a retryable error
+        if (error.status === 429 || error.status >= 500) {
+          const retryAfter = error.headers?.['retry-after'];
+          const delay = retryAfter 
+            ? parseInt(retryAfter) * 1000 
+            : this.BASE_DELAY * Math.pow(2, attempt - 1);
+          
+          if (attempt < this.MAX_RETRIES) {
+            console.log(`🔄 ${context} failed (${error.status}), retrying in ${delay}ms (attempt ${attempt}/${this.MAX_RETRIES})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+        
+        // Non-retryable error or max retries exceeded
+        break;
       }
-    ];
+    }
+    
+    const errorMessage = `❌ ${context} failed after ${this.MAX_RETRIES} attempts`;
+    console.error(errorMessage, lastError);
+    throw lastError || new Error(errorMessage);
   }
 
-  private getMockLists(siteId: string): SharePointList[] {
-    return [
-      {
-        id: "12345678-1234-5678-9abc-123456789def",
-        displayName: "Tasks",
-        description: "Team task tracking list",
-        baseTemplate: 107,
-        list: {
-          contentTypesEnabled: true,
-          hidden: false,
-          template: "genericList"
-        }
-      },
-      {
-        id: "87654321-4321-8765-dcba-987654321fed",
-        displayName: "Documents",
-        description: "Document library for team files",
-        baseTemplate: 101,
-        list: {
-          contentTypesEnabled: false,
-          hidden: false,
-          template: "documentLibrary"
-        }
-      },
-      {
-        id: "abcdef12-5678-9012-3456-abcdef123456",
-        displayName: "Announcements",
-        description: "Team announcements and news",
-        baseTemplate: 104,
-        list: {
-          contentTypesEnabled: true,
-          hidden: false,
-          template: "announcements"
-        }
-      }
-    ];
-  }
+
+
 
   async searchSites(query: string = ""): Promise<SharePointSite[]> {
-    // Return mock data in test mode
-    if (this.isTestMode()) {
-      console.log("🧪 GraphService: Returning mock sites data");
-      const mockSites = this.getMockSites();
+    return this.executeWithRetry(async () => {
+      console.log("🔍 Searching SharePoint sites with query:", query);
       
-      // Filter by query if provided
+      let apiCall = this.client.api("/sites");
+      
       if (query.trim()) {
-        return mockSites.filter(site => 
-          site.displayName.toLowerCase().includes(query.toLowerCase()) ||
-          (site.description && site.description.toLowerCase().includes(query.toLowerCase()))
-        );
+        // Use search with query
+        apiCall = apiCall.search(query);
       }
       
-      return mockSites;
-    }
-
-    try {
-      const response = await this.client
-        .api("/sites")
-        .search(query)
+      const response = await apiCall
         .select("id,webUrl,displayName,description")
         .top(50)
         .get();
 
+      console.log("✅ Successfully retrieved", response.value?.length || 0, "sites");
       return response.value || [];
-    } catch (error) {
-      console.error("Error searching sites:", error);
-      throw new Error("Failed to search SharePoint sites");
-    }
+    }, "Search SharePoint sites");
   }
 
   async getSiteById(siteId: string): Promise<SharePointSite | null> {
-    // Return mock data in test mode
-    if (this.isTestMode()) {
-      console.log("🧪 GraphService: Returning mock site data for", siteId);
-      const mockSites = this.getMockSites();
-      return mockSites.find(site => site.id === siteId) || mockSites[0];
-    }
-
     try {
-      const site = await this.client
-        .api(`/sites/${siteId}`)
-        .select("id,webUrl,displayName,description")
-        .get();
+      return await this.executeWithRetry(async () => {
+        console.log("🔍 Getting site by ID:", siteId);
+        const site = await this.client
+          .api(`/sites/${siteId}`)
+          .select("id,webUrl,displayName,description")
+          .get();
 
-      return site;
+        console.log("✅ Successfully retrieved site:", site.displayName);
+        return site;
+      }, `Get site ${siteId}`);
     } catch (error) {
-      console.error("Error getting site:", error);
+      console.error("❌ Error getting site:", error);
       return null;
     }
   }
 
   async getListsInSite(siteId: string): Promise<SharePointList[]> {
-    // Return mock data in test mode
-    if (this.isTestMode()) {
-      console.log("🧪 GraphService: Returning mock lists data for", siteId);
-      return this.getMockLists(siteId);
-    }
-
-    try {
+    return this.executeWithRetry(async () => {
+      console.log("🔍 Getting lists for site:", siteId);
       const response = await this.client
         .api(`/sites/${siteId}/lists`)
         .select("id,displayName,description,baseTemplate,list")
@@ -187,15 +171,14 @@ export class GraphService {
         .top(100)
         .get();
 
+      console.log("✅ Successfully retrieved", response.value?.length || 0, "lists");
       return response.value || [];
-    } catch (error) {
-      console.error("Error getting lists:", error);
-      throw new Error("Failed to get SharePoint lists");
-    }
+    }, `Get lists for site ${siteId}`);
   }
 
   async getListColumns(siteId: string, listId: string): Promise<SharePointColumn[]> {
-    try {
+    return this.executeWithRetry(async () => {
+      console.log("🔍 Getting columns for list:", listId, "in site:", siteId);
       const response = await this.client
         .api(`/sites/${siteId}/lists/${listId}/columns`)
         .select("id,name,displayName,columnGroup,description,required,indexed,hidden")
@@ -203,7 +186,7 @@ export class GraphService {
         .top(200)
         .get();
 
-      return (response.value || []).map((col: any) => ({
+      const columns = (response.value || []).map((col: any) => ({
         id: col.id,
         name: col.name,
         displayName: col.displayName,
@@ -214,10 +197,10 @@ export class GraphService {
         indexed: col.indexed || false,
         hidden: col.hidden || false,
       }));
-    } catch (error) {
-      console.error("Error getting columns:", error);
-      throw new Error("Failed to get list columns");
-    }
+
+      console.log("✅ Successfully retrieved", columns.length, "columns");
+      return columns;
+    }, `Get columns for list ${listId}`);
   }
 
   async getListItems(
@@ -231,7 +214,8 @@ export class GraphService {
       skip?: number;
     } = {}
   ): Promise<{ items: SharePointListItem[]; hasMore: boolean }> {
-    try {
+    return this.executeWithRetry(async () => {
+      console.log("🔍 Getting list items for:", listId);
       let query = this.client.api(`/sites/${siteId}/lists/${listId}/items`);
 
       if (options.select) {
@@ -257,27 +241,78 @@ export class GraphService {
 
       const response = await query.get();
       
+      console.log("✅ Successfully retrieved", response.value?.length || 0, "list items");
       return {
         items: response.value || [],
         hasMore: (response.value?.length || 0) === top,
       };
-    } catch (error) {
-      console.error("Error getting list items:", error);
-      throw new Error("Failed to get list items");
-    }
+    }, `Get list items for ${listId}`);
   }
 
   async getListItemCount(siteId: string, listId: string): Promise<number> {
     try {
-      const response = await this.client
-        .api(`/sites/${siteId}/lists/${listId}`)
-        .select("list")
-        .get();
+      return await this.executeWithRetry(async () => {
+        console.log("🔍 Getting item count for list:", listId);
+        const response = await this.client
+          .api(`/sites/${siteId}/lists/${listId}`)
+          .select("list")
+          .get();
 
-      return response.list?.itemCount || 0;
+        const count = response.list?.itemCount || 0;
+        console.log("✅ Item count:", count);
+        return count;
+      }, `Get item count for list ${listId}`);
     } catch (error) {
-      console.error("Error getting item count:", error);
+      console.error("❌ Error getting item count:", error);
       return 0;
+    }
+  }
+
+  /**
+   * Generate admin consent URL for enterprise access
+   * Following SPLENS pattern for tenant admin permissions
+   */
+  generateAdminConsentUrl(tenantId?: string, redirectUri?: string): string | null {
+    try {
+      const clientId = process.env.VITE_AZURE_AD_CLIENT_ID;
+      if (!clientId) {
+        console.error("❌ Missing VITE_AZURE_AD_CLIENT_ID for admin consent URL");
+        return null;
+      }
+
+      const tenant = tenantId || "common";
+      const redirect = redirectUri || process.env.VITE_AZURE_AD_REDIRECT_URI || "http://localhost:5000/auth/callback";
+      
+      const scopes = [
+        "https://graph.microsoft.com/Sites.Read.All",
+        "https://graph.microsoft.com/Files.Read.All",
+        "https://graph.microsoft.com/User.Read"
+      ].join(" ");
+
+      const consentUrl = `https://login.microsoftonline.com/${tenant}/adminconsent` +
+        `?client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirect)}` +
+        `&scope=${encodeURIComponent(scopes)}`;
+
+      console.log("🔗 Generated admin consent URL for tenant:", tenant);
+      return consentUrl;
+    } catch (error) {
+      console.error("❌ Failed to generate admin consent URL:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract tenant ID from current access token
+   */
+  getTenantId(): string | null {
+    try {
+      // Decode JWT token to get tenant ID
+      const tokenPayload = JSON.parse(Buffer.from(this.accessToken.split('.')[1], 'base64').toString());
+      return tokenPayload.tid || null;
+    } catch (error) {
+      console.error("❌ Failed to extract tenant ID from token:", error);
+      return null;
     }
   }
 

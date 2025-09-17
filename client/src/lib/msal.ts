@@ -2,9 +2,9 @@ import { PublicClientApplication, Configuration, AuthenticationResult } from "@a
 
 const msalConfig: Configuration = {
   auth: {
-    clientId: import.meta.env.VITE_AZURE_AD_CLIENT_ID || "your-client-id",
-    authority: import.meta.env.VITE_AZURE_AD_AUTHORITY || "https://login.microsoftonline.com/common",
-    redirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI || window.location.origin + "/auth/callback",
+    clientId: import.meta.env.VITE_AZURE_AD_CLIENT_ID!,
+    authority: import.meta.env.VITE_AZURE_AD_AUTHORITY!,
+    redirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!,
   },
   cache: {
     cacheLocation: "sessionStorage",
@@ -16,9 +16,9 @@ export const msalInstance = new PublicClientApplication(msalConfig);
 
 export const loginRequest = {
   scopes: [
-    "User.Read",
-    "Sites.Read.All",
-    "Files.Read.All",
+    "https://graph.microsoft.com/User.Read",
+    "https://graph.microsoft.com/Sites.Read.All",
+    "https://graph.microsoft.com/Files.Read.All",
     "offline_access",
   ],
 };
@@ -30,16 +30,13 @@ export const silentRequest = {
 
 // Initialize MSAL
 export async function initializeMsal(): Promise<void> {
-  // Check for test mode
-  const isTestMode = window.location.hostname.includes('replit') || import.meta.env.DEV;
-  
-  // Skip MSAL initialization in test mode
-  if (isTestMode) {
-    console.log("🧪 Skipping MSAL initialization in test mode");
-    return;
+  try {
+    await msalInstance.initialize();
+    console.log("✅ MSAL initialized successfully");
+  } catch (error) {
+    console.error("❌ MSAL initialization failed:", error);
+    throw error;
   }
-  
-  await msalInstance.initialize();
 }
 
 // Login with popup
@@ -65,28 +62,23 @@ export async function loginWithRedirect(): Promise<void> {
 
 // Get access token silently
 export async function getAccessTokenSilent(): Promise<string | null> {
-  // Check for test mode
-  const isTestMode = window.location.hostname.includes('replit') || import.meta.env.DEV;
-  
-  // Return test token in test mode
-  if (isTestMode) {
-    return "test-token-789";
-  }
-  
   try {
     const accounts = msalInstance.getAllAccounts();
     if (accounts.length === 0) {
+      console.warn("No accounts found, user needs to login");
       return null;
     }
 
     silentRequest.account = accounts[0];
     const response = await msalInstance.acquireTokenSilent(silentRequest);
+    console.log("✅ Access token acquired silently");
     return response.accessToken;
   } catch (error) {
     console.error("Silent token acquisition failed:", error);
     
     // If silent acquisition fails, try with popup
     try {
+      console.log("🔄 Attempting token acquisition with popup");
       const response = await msalInstance.acquireTokenPopup(loginRequest);
       return response.accessToken;
     } catch (popupError) {
@@ -108,14 +100,6 @@ export async function logout(): Promise<void> {
 
 // Check if user is authenticated
 export function isAuthenticated(): boolean {
-  // Check for test mode
-  const isTestMode = window.location.hostname.includes('replit') || import.meta.env.DEV;
-  
-  // Return true in test mode
-  if (isTestMode) {
-    return true;
-  }
-  
   const accounts = msalInstance.getAllAccounts();
   return accounts.length > 0;
 }
