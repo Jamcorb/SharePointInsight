@@ -1,0 +1,51 @@
+Looking at your SPLens application, here's how it connects to SharePoint and retrieves data from Azure:
+
+Azure Authentication Flow
+The application uses Microsoft Authentication Library (MSAL) with Azure AD for authentication:
+
+MSAL Configuration (msalConfig.ts): Sets up multi-tenant authentication using your Azure app registration
+Authentication Service (authService.ts): Handles login, token acquisition, and Microsoft Graph client initialization
+Required Scopes: sites.read.all, files.read.all, user.read for SharePoint access
+SharePoint Data Retrieval
+The application retrieves SharePoint data through Microsoft Graph API:
+
+Site and Library Discovery
+Sites: /sites/root endpoint to get site information
+Lists/Libraries: /sites/root/lists to enumerate document libraries
+Drive Contents: /sites/root/lists/{listId}/items for library contents
+Permission Analysis
+Role Assignments: /sites/root/permissions for site-level permissions
+List Permissions: /sites/root/lists/{listId}/permissions for list-specific permissions
+Sharing Information: Analyzes external shares and permission inheritance
+Rate Limiting Handling
+The application includes sophisticated throttling management (graphApiRequest.ts):
+
+Smart Retry Logic: Exponential backoff with configurable retry limits
+429 Handling: Respects Retry-After headers from Microsoft Graph
+Request Counting: Tracks API usage to prevent quota exhaustion
+Key Components
+SharePoint API Service (sharepoint.ts): Main interface for SharePoint operations
+Explorer Hook (useSharePointExplorer.ts): Manages tree navigation and content loading
+Connection Page (sharepoint-connection.tsx): User interface for initiating scans
+Admin Consent Requirement
+For enterprise access, the application generates admin consent URLs when users lack sufficient permissions:
+
+generateAdminConsentUrl(): string | null {
+  const tenantId = this.getTenantId();
+  const scopes = [
+    "https://graph.microsoft.com/Sites.Read.All",
+    "https://graph.microsoft.com/Files.Read.All"
+  ].join(" ");
+  
+  return `https://login.microsoftonline.com/${tenantId}/adminconsent?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${encodeURIComponent(scopes)}`;
+}
+Data Flow Summary
+User Authentication → Azure AD via MSAL
+Token Acquisition → Access tokens for Microsoft Graph
+API Requests → Microsoft Graph endpoints with throttling
+Data Processing → Permission analysis and security recommendations
+UI Display → Results shown in the connection interface
+The application never stores SharePoint credentials - it relies entirely on Azure AD tokens and Microsoft Graph API for secure, delegated access to SharePoint Online data.
+
+Scroll to latest
+Assistant mode
