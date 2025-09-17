@@ -84,6 +84,13 @@ export function useAuth() {
             title: "Signed in successfully",
             description: "Welcome to SP Reports Hub",
           });
+          
+          // Immediately redirect to builder after successful authentication
+          // Don't wait for backend verification to prevent redirect delays
+          if (window.location.pathname === "/" || window.location.pathname === "/login") {
+            window.location.href = "/builder";
+            return; // Exit early, don't continue with auth context refresh
+          }
         }
         
         await refreshAuthContext();
