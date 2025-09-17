@@ -12,10 +12,10 @@ export interface AzureAdConfig {
 
 export function getAzureAdConfig(): AzureAdConfig {
   // Get client ID from environment or use a default for development
-  const clientId = process.env.AZURE_AD_CLIENT_ID || process.env.VITE_AZURE_AD_CLIENT_ID || "your-client-id";
+  const clientId = (process.env.AZURE_AD_CLIENT_ID || process.env.VITE_AZURE_AD_CLIENT_ID || "your-client-id").trim();
   
   // Get authority from environment
-  const authority = process.env.AZURE_AD_AUTHORITY || process.env.VITE_AZURE_AD_AUTHORITY || "https://login.microsoftonline.com/common";
+  const authority = (process.env.AZURE_AD_AUTHORITY || process.env.VITE_AZURE_AD_AUTHORITY || "https://login.microsoftonline.com/common").trim();
   
   // Extract tenant ID from authority if available
   let tenantId: string | undefined;

@@ -2,9 +2,9 @@ import { PublicClientApplication, Configuration, AuthenticationResult } from "@a
 
 const msalConfig: Configuration = {
   auth: {
-    clientId: import.meta.env.VITE_AZURE_AD_CLIENT_ID!,
-    authority: import.meta.env.VITE_AZURE_AD_AUTHORITY!,
-    redirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!,
+    clientId: import.meta.env.VITE_AZURE_AD_CLIENT_ID!.trim(),
+    authority: import.meta.env.VITE_AZURE_AD_AUTHORITY!.trim(),
+    redirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
   },
   cache: {
     cacheLocation: "sessionStorage",
