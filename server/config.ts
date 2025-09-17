@@ -38,7 +38,7 @@ export function getAzureAdConfig(): AzureAdConfig {
     clientId,
     authority,
     tenantId,
-    audience: clientId, // For access tokens, audience is typically the client ID
+    audience: "https://graph.microsoft.com", // Accept Microsoft Graph tokens since we're using Graph APIs
     // Support both v1 and v2 Azure AD token issuers for backwards compatibility
     issuer: tenantId && tenantId !== 'common' 
       ? [`https://sts.windows.net/${tenantId}/`, `https://login.microsoftonline.com/${tenantId}/v2.0`]
