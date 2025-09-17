@@ -1,0 +1,45 @@
+[Info] Successfully preconnected to https://fonts.googleapis.com/
+[Info] Successfully preconnected to https://fonts.gstatic.com/
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:45 GMT] : [] : @azure/msal-browser@4.22.1 : Info - MSAL.js was last initialized by version: 4.22.1" (index-BkRrEO0W.js, line 244)
+[Log] ✅ MSAL initialized successfully (index-BkRrEO0W.js, line 244)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:45 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BkRrEO0W.js, line 244)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:45 GMT] : [01995842-924a-7304-8dcc-d5e82f42b0e6] : msal.js.browser@4.22.1 : Info - handleRedirectPromise did no…" (index-BkRrEO0W.js, line 244)
+"[Wed, 17 Sep 2025 15:43:45 GMT] : [01995842-924a-7304-8dcc-d5e82f42b0e6] : msal.js.browser@4.22.1 : Info - handleRedirectPromise did not detect a response as a result of a redirect. Cleaning temporary cache."
+[Log] 🔍 Getting authentication context (index-BkRrEO0W.js, line 244)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:45 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BkRrEO0W.js, line 244)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:45 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BkRrEO0W.js, line 244)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:45 GMT] : [01995858-98a0-7d4f-8984-2ff8593b33e2] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToke…" (index-BkRrEO0W.js, line 244)
+"[Wed, 17 Sep 2025 15:43:45 GMT] : [01995858-98a0-7d4f-8984-2ff8593b33e2] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToken - Returning access token"
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:45 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BkRrEO0W.js, line 244)
+[Log] ✅ Access token acquired silently (index-BkRrEO0W.js, line 244)
+[Log] ✅ Access token acquired, verifying with backend (index-BkRrEO0W.js, line 244)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Error] ❌ Authentication verification failed: – 401 – "{\"error\":\"Authentication failed\"}"
+	(anonymous function) (index-BkRrEO0W.js:244:187620)
+[Error] ❌ Auth context error: – Error: Authentication verification failed: 401 — index-BkRrEO0W.js:244:187682
+Error: Authentication verification failed: 401 — index-BkRrEO0W.js:244:187682
+	(anonymous function) (index-BkRrEO0W.js:244:187921)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:51 GMT] : [] : @azure/msal-browser@4.22.1 : Info - initialize has already been called, exiting early." (index-BkRrEO0W.js, line 244)
+[Log] ✅ MSAL initialized successfully (index-BkRrEO0W.js, line 244)
+[Log] 🔍 Getting authentication context (index-BkRrEO0W.js, line 244)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:51 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BkRrEO0W.js, line 244)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:51 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BkRrEO0W.js, line 244)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:51 GMT] : [01995858-b20d-7365-b930-c6f41d3f06bf] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToke…" (index-BkRrEO0W.js, line 244)
+"[Wed, 17 Sep 2025 15:43:51 GMT] : [01995858-b20d-7365-b930-c6f41d3f06bf] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToken - Returning access token"
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:43:51 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BkRrEO0W.js, line 244)
+[Log] ✅ Access token acquired silently (index-BkRrEO0W.js, line 244)
+[Log] ✅ Access token acquired, verifying with backend (index-BkRrEO0W.js, line 244)
+[Error] Failed to load resource: the server responded with a status of 500 () (me, line 0)
+[Error] ❌ Authentication verification failed: – 500 – "Internal Server Error"
+	(anonymous function) (index-BkRrEO0W.js:244:187620)
+[Error] ❌ Auth context error: – Error: Authentication verification failed: 500 — index-BkRrEO0W.js:244:187682
+Error: Authentication verification failed: 500 — index-BkRrEO0W.js:244:187682
+	(anonymous function) (index-BkRrEO0W.js:244:187921)
+[Info] 🔵 MSAL Info: – "[Wed, 17 Sep 2025 15:44:18 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BkRrEO0W.js, line 244)
+[Info] Successfully preconnected to https://aadcdn.msftauth.net/ (x4)
+[Error] Source Map loading errors (x2)
+[Error] Failed to load resource: the server responded with a status of 404 () (oneDs_8f98d4d37166778df9c9.js.map, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (oneDs_8f98d4d37166778df9c9.js.map, line 0)
+[Log] true (Me.htm, line 1)
+[Log] Storage access: – false (Me.htm, line 1)
+[Error] Failed to load resource: the server responded with a status of 500 () (callback, line 0)
