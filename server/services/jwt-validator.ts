@@ -169,11 +169,29 @@ export class AzureAdJwtValidator {
     // Validate required scopes for Microsoft Graph API access
     if (options.requiredScopes && options.requiredScopes.length > 0) {
       const tokenScopes = payload.scp ? payload.scp.split(' ') : [];
-      const hasRequiredScopes = options.requiredScopes.every(requiredScope =>
-        tokenScopes.includes(requiredScope)
+      
+      // Helper function to normalize scopes - extract simple names from full Graph URLs
+      const normalizeScope = (scope: string): string => {
+        if (scope.startsWith('https://graph.microsoft.com/')) {
+          return scope.replace('https://graph.microsoft.com/', '');
+        }
+        return scope;
+      };
+      
+      // Normalize both token scopes and required scopes for comparison
+      const normalizedTokenScopes = tokenScopes.map(normalizeScope);
+      const normalizedRequiredScopes = options.requiredScopes.map(normalizeScope);
+      
+      const hasRequiredScopes = normalizedRequiredScopes.every(requiredScope =>
+        normalizedTokenScopes.includes(requiredScope)
       );
       
       if (!hasRequiredScopes) {
+        console.error('🔍 Scope validation failed:');
+        console.error('Token scopes:', tokenScopes);
+        console.error('Normalized token scopes:', normalizedTokenScopes);
+        console.error('Required scopes:', options.requiredScopes);
+        console.error('Normalized required scopes:', normalizedRequiredScopes);
         throw new Error(`Token missing required scopes: ${options.requiredScopes.join(', ')}`);
       }
     }
