@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { storage } from "./storage";
 import { requireAuth, validateTenant, type AuthenticatedRequest } from "./services/auth";
 import { createGraphService } from "./services/graph";
@@ -43,6 +45,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || "development" 
     });
+  });
+
+  // Version endpoint (no auth required)
+  app.get("/api/version", async (req, res) => {
+    try {
+      const packageJsonPath = resolve(process.cwd(), "package.json");
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+      res.json({ version: packageJson.version });
+    } catch (error) {
+      console.error("Failed to read package.json:", error);
+      res.status(500).json({ error: "Failed to get version" });
+    }
   });
 
   // Authentication check endpoint

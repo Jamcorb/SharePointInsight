@@ -1,10 +1,22 @@
 import { Building2, Code } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface FooterProps {
   version?: string;
 }
 
-export function Footer({ version = "1.0.0" }: FooterProps) {
+export function Footer({ version }: FooterProps) {
+  const [appVersion, setAppVersion] = useState(version || "1.0.0");
+
+  useEffect(() => {
+    if (!version) {
+      // Fetch version from API if not provided
+      fetch('/api/version')
+        .then(res => res.json())
+        .then(data => setAppVersion(data.version))
+        .catch(() => setAppVersion("1.0.0")); // Fallback on error
+    }
+  }, [version]);
   return (
     <footer className="border-t border-border bg-card mt-auto">
       <div className="px-6 py-4">
@@ -22,7 +34,7 @@ export function Footer({ version = "1.0.0" }: FooterProps) {
           
           <div className="flex items-center space-x-1" data-testid="app-version">
             <Code className="h-3 w-3" />
-            <span className="text-xs font-mono">v{version}</span>
+            <span className="text-xs font-mono">v{appVersion}</span>
           </div>
         </div>
       </div>
