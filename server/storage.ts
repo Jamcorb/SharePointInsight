@@ -24,6 +24,10 @@ import {
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
+function isUniqueConstraintError(error: unknown): error is { code?: string } {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "23505";
+}
+
 export interface IStorage {
   // Tenants
   getTenant(id: string): Promise<Tenant | undefined>;
@@ -85,8 +89,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
-    const [tenant] = await db.insert(tenants).values(insertTenant).returning();
-    return tenant;
+    try {
+      const [tenant] = await db.insert(tenants).values(insertTenant).returning();
+      return tenant;
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        const existingTenant = await this.getTenantByDomain(insertTenant.domain);
+        if (existingTenant) {
+          if (existingTenant.azureTenantId !== insertTenant.azureTenantId || existingTenant.name !== insertTenant.name) {
+            return await this.updateTenant(existingTenant.id, {
+              azureTenantId: insertTenant.azureTenantId,
+              name: insertTenant.name,
+            });
+          }
+          return existingTenant;
+        }
+      }
+      throw error;
+    }
   }
 
   async updateTenant(id: string, updates: Partial<Tenant>): Promise<Tenant> {
@@ -106,8 +126,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    try {
+      const [user] = await db.insert(users).values(insertUser).returning();
+      return user;
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        const existingUser = await this.getUserByUpn(insertUser.upn);
+        if (existingUser) {
+          const currentRoles = Array.isArray(existingUser.roles) ? existingUser.roles : [];
+          const incomingRoles = Array.isArray(insertUser.roles)
+            ? insertUser.roles
+            : currentRoles;
+          const rolesChanged =
+            currentRoles.length !== incomingRoles.length ||
+            currentRoles.some((role, index) => role !== incomingRoles[index]);
+
+          if (
+            existingUser.tenantId !== insertUser.tenantId ||
+            existingUser.name !== insertUser.name ||
+            existingUser.email !== insertUser.email ||
+            rolesChanged
+          ) {
+            return await this.updateUser(existingUser.id, {
+              tenantId: insertUser.tenantId,
+              name: insertUser.name,
+              email: insertUser.email,
+              roles: incomingRoles,
+            });
+          }
+          return existingUser;
+        }
+      }
+      throw error;
+    }
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
