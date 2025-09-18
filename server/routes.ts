@@ -38,6 +38,56 @@ const exportRequestSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add debugging middleware for all requests
+  app.use((req, res, next) => {
+    console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.path}`);
+    console.log(`   Headers:`, { 
+      authorization: req.headers.authorization ? `Bearer ${req.headers.authorization.split(' ')[1]?.substring(0, 20)}...` : 'None',
+      'content-type': req.headers['content-type'],
+    });
+    
+    // Capture response data
+    const originalSend = res.send;
+    const originalJson = res.json;
+    
+    res.send = function(data) {
+      if (res.statusCode >= 400) {
+        console.error(`❌ [${new Date().toISOString()}] ${req.method} ${req.path} → ${res.statusCode}`);
+        console.error(`   Error Response:`, data);
+      } else {
+        console.log(`✅ [${new Date().toISOString()}] ${req.method} ${req.path} → ${res.statusCode}`);
+      }
+      return originalSend.call(this, data);
+    };
+    
+    res.json = function(data) {
+      if (res.statusCode >= 400) {
+        console.error(`❌ [${new Date().toISOString()}] ${req.method} ${req.path} → ${res.statusCode}`);
+        console.error(`   Error Response:`, JSON.stringify(data, null, 2));
+      } else {
+        console.log(`✅ [${new Date().toISOString()}] ${req.method} ${req.path} → ${res.statusCode}`);
+      }
+      return originalJson.call(this, data);
+    };
+    
+    next();
+  });
+
+  // Global error handler for unhandled errors
+  app.use((error: any, req: any, res: any, next: any) => {
+    console.error(`💥 [${new Date().toISOString()}] UNHANDLED ERROR in ${req.method} ${req.path}:`);
+    console.error(error);
+    console.error(`Stack:`, error.stack);
+    
+    res.status(500).json({ 
+      error: "Internal server error",
+      details: process.env.NODE_ENV === 'development' ? {
+        message: error.message,
+        stack: error.stack
+      } : undefined
+    });
+  });
+
   // Health check endpoint (no auth required)
   app.get("/api/health", async (req, res) => {
     res.json({ 
