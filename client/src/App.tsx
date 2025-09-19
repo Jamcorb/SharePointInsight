@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Footer } from "@/components/layout/footer";
 import ErrorBoundary from "@/components/error-boundary";
+import { GlobalErrorHandler } from "@/components/global-error-handler";
 import { useAuth } from "@/hooks/use-auth";
 import Login from "@/pages/login";
 import Builder from "@/pages/builder";
@@ -56,6 +57,7 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
+          <GlobalErrorHandler />
           <div className="min-h-screen flex flex-col">
             <div className="flex-1">
               <Toaster />

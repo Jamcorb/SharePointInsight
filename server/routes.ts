@@ -38,6 +38,41 @@ const exportRequestSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Debug middleware to catch 500 errors
+  app.use((req, res, next) => {
+    console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.path}`);
+    
+    const originalJson = res.json;
+    res.json = function(data) {
+      if (res.statusCode >= 400) {
+        console.error(`❌ [${new Date().toISOString()}] ${req.method} ${req.path} → ${res.statusCode}`);
+        console.error(`   Error Response:`, JSON.stringify(data, null, 2));
+      }
+      return originalJson.call(this, data);
+    };
+    
+    next();
+  });
+
+  // Global error handler for unhandled errors
+  app.use((error: any, req: any, res: any, next: any) => {
+    console.error(`💥 [${new Date().toISOString()}] UNHANDLED ERROR in ${req.method} ${req.path}:`);
+    console.error(`Error message:`, error.message);
+    console.error(`Stack trace:`, error.stack);
+    
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: "Internal server error",
+        details: process.env.NODE_ENV === 'development' ? {
+          message: error.message,
+          stack: error.stack,
+          path: req.path,
+          method: req.method
+        } : undefined
+      });
+    }
+  });
+
   // Health check endpoint (no auth required)
   app.get("/api/health", async (req, res) => {
     res.json({ 
