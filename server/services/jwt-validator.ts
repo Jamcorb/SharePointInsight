@@ -92,19 +92,34 @@ export class AzureAdJwtValidator {
         kid: decoded && typeof decoded !== 'string' ? decoded.header?.kid : undefined
       });
       
-      if (!decoded || typeof decoded === 'string' || !decoded.header.kid) {
-        console.error("❌ Token validation failed - details:", {
+      if (!decoded || typeof decoded === 'string' || !decoded.header) {
+        console.error("❌ Token validation failed - invalid JWT structure:", {
           decoded: !!decoded,
           isString: typeof decoded === 'string',
           hasHeader: decoded && typeof decoded !== 'string' ? !!decoded.header : false,
-          hasKid: decoded && typeof decoded !== 'string' ? !!decoded.header?.kid : false,
-          header: decoded && typeof decoded !== 'string' ? decoded.header : 'N/A'
         });
-        throw new Error('Invalid token format or missing key ID');
+        throw new Error('Invalid JWT format');
       }
 
-      // Step 2: Get public key for verification
-      const signingKey = await this.getSigningKey(decoded.header.kid);
+      // Azure AD tokens may use kid, x5t, or x5t#S256 for key identification
+      const keyId = decoded.header.kid || decoded.header['x5t#S256'] || decoded.header['x5t'];
+      
+      if (!keyId) {
+        console.error("❌ Token header missing key identifier:", {
+          header: decoded.header,
+          alg: decoded.header.alg,
+          typ: decoded.header.typ,
+          hasKid: !!decoded.header.kid,
+          hasX5t: !!decoded.header['x5t'],
+          hasX5tS256: !!decoded.header['x5t#S256']
+        });
+        throw new Error('Token header missing key identifier (kid/x5t)');
+      }
+      
+      console.log("✅ Found key identifier:", { keyId: keyId.substring(0, 8) + '...', type: decoded.header.kid ? 'kid' : 'x5t' });
+
+      // Step 2: Get public key for verification using found key identifier
+      const signingKey = await this.getSigningKey(keyId);
 
       // Step 3: Verify token signature and standard claims
       // Note: jwt.verify doesn't support multiple issuers, so we'll validate issuer manually
@@ -170,9 +185,26 @@ export class AzureAdJwtValidator {
       }
     }
 
-    // Validate audience if provided
-    if (options.audience && payload.aud !== options.audience) {
-      throw new Error('Token audience does not match expected value');
+    // Validate audience if provided - accept both Graph audience formats
+    if (options.audience) {
+      if (options.audience === "https://graph.microsoft.com") {
+        const validAudiences = [
+          "https://graph.microsoft.com",
+          "00000003-0000-0000-c000-000000000000" // Microsoft Graph GUID
+        ];
+        
+        if (!validAudiences.includes(payload.aud)) {
+          console.error("❌ Invalid audience:", { 
+            expected: validAudiences, 
+            actual: payload.aud 
+          });
+          throw new Error(`Invalid audience. Expected Graph audience but got: ${payload.aud}`);
+        }
+        
+        console.log("✅ Valid Graph audience:", payload.aud);
+      } else if (payload.aud !== options.audience) {
+        throw new Error(`Invalid audience. Expected: ${options.audience}, got: ${payload.aud}`);
+      }
     }
 
     // Validate tenant ID if provided
