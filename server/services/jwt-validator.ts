@@ -78,8 +78,28 @@ export class AzureAdJwtValidator {
     };
     try {
       // Step 1: Decode header to get key ID (kid)
+      console.log("🔍 Attempting to decode JWT token...");
+      console.log("🔍 Token length:", token.length);
+      console.log("🔍 Token parts:", token.split('.').length);
+      
       const decoded = jwt.decode(token, { complete: true });
+      console.log("🔍 Decoded token structure:", {
+        exists: !!decoded,
+        type: typeof decoded,
+        hasHeader: decoded && typeof decoded !== 'string' ? !!decoded.header : false,
+        hasPayload: decoded && typeof decoded !== 'string' ? !!decoded.payload : false,
+        headerKeys: decoded && typeof decoded !== 'string' ? Object.keys(decoded.header || {}) : [],
+        kid: decoded && typeof decoded !== 'string' ? decoded.header?.kid : undefined
+      });
+      
       if (!decoded || typeof decoded === 'string' || !decoded.header.kid) {
+        console.error("❌ Token validation failed - details:", {
+          decoded: !!decoded,
+          isString: typeof decoded === 'string',
+          hasHeader: decoded && typeof decoded !== 'string' ? !!decoded.header : false,
+          hasKid: decoded && typeof decoded !== 'string' ? !!decoded.header?.kid : false,
+          header: decoded && typeof decoded !== 'string' ? decoded.header : 'N/A'
+        });
         throw new Error('Invalid token format or missing key ID');
       }
 

@@ -1,0 +1,39 @@
+[Error] Failed to load resource: the server responded with a status of 500 () (login, line 0)
+[Error] Failed to load resource: the server responded with a status of 500 () (insight.splens.app, line 0)
+[Info] Successfully preconnected to https://fonts.googleapis.com/
+[Info] Successfully preconnected to https://fonts.gstatic.com/
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-browser@4.22.1 : Info - MSAL.js was last initialized by version: 4.22.1" (index-BL-ql8kk.js, line 254)
+[Log] ✅ MSAL initialized successfully (index-BL-ql8kk.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-browser@4.22.1 : Info - handleRedirectPromise called but there is no interaction i…" (index-BL-ql8kk.js, line 254)
+"[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-browser@4.22.1 : Info - handleRedirectPromise called but there is no interaction in progress, returning null."
+[Log] 🔍 Getting authentication context (index-BL-ql8kk.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BL-ql8kk.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BL-ql8kk.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [01996279-d8ee-7ad4-b993-e88d4ee1dbc2] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToke…" (index-BL-ql8kk.js, line 254)
+"[Fri, 19 Sep 2025 14:56:16 GMT] : [01996279-d8ee-7ad4-b993-e88d4ee1dbc2] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToken - Returning access token"
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BL-ql8kk.js, line 254)
+[Log] ✅ Access token acquired silently (index-BL-ql8kk.js, line 254)
+[Log] ✅ Access token acquired, verifying with backend (index-BL-ql8kk.js, line 254)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Error] ❌ Authentication verification failed: – 401 – "{\"error\":\"Authentication failed\"}"
+	(anonymous function) (index-BL-ql8kk.js:254:187592)
+[Error] ❌ Auth context error: – Error: Authentication verification failed: 401 — index-BL-ql8kk.js:254:187654
+Error: Authentication verification failed: 401 — index-BL-ql8kk.js:254:187654
+	(anonymous function) (index-BL-ql8kk.js:254:187893)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-browser@4.22.1 : Info - initialize has already been called, exiting early." (index-BL-ql8kk.js, line 254)
+[Log] ✅ MSAL initialized successfully (index-BL-ql8kk.js, line 254)
+[Log] 🔍 Getting authentication context (index-BL-ql8kk.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BL-ql8kk.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BL-ql8kk.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [01996279-d990-7f09-9a83-20331dcb6b3e] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToke…" (index-BL-ql8kk.js, line 254)
+"[Fri, 19 Sep 2025 14:56:16 GMT] : [01996279-d990-7f09-9a83-20331dcb6b3e] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToken - Returning access token"
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:56:16 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BL-ql8kk.js, line 254)
+[Log] ✅ Access token acquired silently (index-BL-ql8kk.js, line 254)
+[Log] ✅ Access token acquired, verifying with backend (index-BL-ql8kk.js, line 254)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Error] ❌ Authentication verification failed: – 401 – "{\"error\":\"Authentication failed\"}"
+	(anonymous function) (index-BL-ql8kk.js:254:187592)
+[Error] ❌ Auth context error:
+Error: Authentication verification failed: 401
+(anonymous function) — index-BL-ql8kk.js:254:187654
+	(anonymous function) (index-BL-ql8kk.js:254:187893)
