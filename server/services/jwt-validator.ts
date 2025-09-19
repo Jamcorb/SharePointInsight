@@ -123,12 +123,17 @@ export class AzureAdJwtValidator {
 
       // Step 3: Verify token signature and standard claims
       // Note: jwt.verify doesn't support multiple issuers, so we'll validate issuer manually
+      // Allow Microsoft Graph tokens that use either the resource URL or the well-known GUID
+      const audienceOption = validationOptions.audience === "https://graph.microsoft.com"
+        ? ["https://graph.microsoft.com", "00000003-0000-0000-c000-000000000000"] as [string, ...string[]]
+        : validationOptions.audience;
+
       const payload = jwt.verify(token, signingKey, {
         algorithms: ['RS256'], // Azure AD uses RS256
         clockTolerance: this.config.clockTolerance,
-        audience: validationOptions.audience,
+        audience: audienceOption,
         // Skip issuer validation in jwt.verify since we handle it manually for multiple issuers
-      }) as AzureAdTokenPayload;
+      }) as unknown as AzureAdTokenPayload;
 
       // Step 4: Validate Azure AD specific claims
       await this.validateAzureAdClaims(payload, validationOptions);
