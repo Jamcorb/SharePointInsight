@@ -1,0 +1,70 @@
+[Info] Successfully preconnected to https://fonts.googleapis.com/
+[Info] Successfully preconnected to https://fonts.gstatic.com/
+[Log] ✅ MSAL initialized successfully (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:00 GMT] : [] : @azure/msal-browser@4.22.1 : Info - handleRedirectPromise called but there is no interaction i…" (index-BoIrvJh_.js, line 254)
+"[Fri, 19 Sep 2025 14:46:00 GMT] : [] : @azure/msal-browser@4.22.1 : Info - handleRedirectPromise called but there is no interaction in progress, returning null."
+[Log] 🔍 Getting authentication context (index-BoIrvJh_.js, line 254)
+[Log] ⚠️ User not authenticated (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:00 GMT] : [] : @azure/msal-browser@4.22.1 : Info - initialize has already been called, exiting early." (index-BoIrvJh_.js, line 254)
+[Log] ✅ MSAL initialized successfully (index-BoIrvJh_.js, line 254)
+[Log] 🔍 Getting authentication context (index-BoIrvJh_.js, line 254)
+[Log] ⚠️ User not authenticated (index-BoIrvJh_.js, line 254)
+[Info] Successfully preconnected to https://aadcdn.msftauth.net/ (x4)
+[Log] true (Me.htm, line 1)
+[Log] Storage access: – false (Me.htm, line 1)
+[Info] Successfully preconnected to https://fonts.googleapis.com/
+[Info] Successfully preconnected to https://fonts.gstatic.com/
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:21 GMT] : [] : @azure/msal-browser@4.22.1 : Info - MSAL.js was last initialized by version: 4.22.1" (index-BoIrvJh_.js, line 254)
+[Log] ✅ MSAL initialized successfully (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:21 GMT] : [] : @azure/msal-browser@4.22.1 : Info - BrowserCacheManager: addTokenKey - idToken added to map" (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:21 GMT] : [] : @azure/msal-browser@4.22.1 : Info - BrowserCacheManager: addTokenKey - refreshToken added to map" (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:21 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BoIrvJh_.js, line 254)
+[Log] ✅ Authentication redirect successful (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:21 GMT] : [] : @azure/msal-browser@4.22.1 : Info - initialize has already been called, exiting early." (index-BoIrvJh_.js, line 254)
+[Log] ✅ MSAL initialized successfully (index-BoIrvJh_.js, line 254)
+[Log] ✅ Authentication redirect successful (index-BoIrvJh_.js, line 254)
+[Info] Successfully preconnected to https://fonts.googleapis.com/
+[Info] Successfully preconnected to https://fonts.gstatic.com/
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-browser@4.22.1 : Info - MSAL.js was last initialized by version: 4.22.1" (index-BoIrvJh_.js, line 254)
+[Log] ✅ MSAL initialized successfully (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-browser@4.22.1 : Info - handleRedirectPromise called but there is no interaction i…" (index-BoIrvJh_.js, line 254)
+"[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-browser@4.22.1 : Info - handleRedirectPromise called but there is no interaction in progress, returning null."
+[Log] 🔍 Getting authentication context (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [01996270-c6b8-774a-bbc6-c80d93d0bf22] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToke…" (index-BoIrvJh_.js, line 254)
+"[Fri, 19 Sep 2025 14:46:22 GMT] : [01996270-c6b8-774a-bbc6-c80d93d0bf22] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToken - Returning access token"
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BoIrvJh_.js, line 254)
+[Log] ✅ Access token acquired silently (index-BoIrvJh_.js, line 254)
+[Log] ✅ Access token acquired, verifying with backend (index-BoIrvJh_.js, line 254)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Error] ❌ Authentication verification failed: – 401 – "{\"error\":\"Authentication failed\"}"
+	(anonymous function) (index-BoIrvJh_.js:254:187592)
+[Error] ❌ Auth context error: – Error: Authentication verification failed: 401 — index-BoIrvJh_.js:254:187654
+Error: Authentication verification failed: 401 — index-BoIrvJh_.js:254:187654
+	(anonymous function) (index-BoIrvJh_.js:254:187893)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-browser@4.22.1 : Info - initialize has already been called, exiting early." (index-BoIrvJh_.js, line 254)
+[Log] ✅ MSAL initialized successfully (index-BoIrvJh_.js, line 254)
+[Log] 🔍 Getting authentication context (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BoIrvJh_.js, line 254)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [01996270-c76c-7ff9-9c16-c39c6bfed396] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToke…" (index-BoIrvJh_.js, line 254)
+"[Fri, 19 Sep 2025 14:46:22 GMT] : [01996270-c76c-7ff9-9c16-c39c6bfed396] : @azure/msal-common@15.12.0 : Info - CacheManager:getAccessToken - Returning access token"
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:22 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BoIrvJh_.js, line 254)
+[Log] ✅ Access token acquired silently (index-BoIrvJh_.js, line 254)
+[Log] ✅ Access token acquired, verifying with backend (index-BoIrvJh_.js, line 254)
+[Error] Failed to load resource: the server responded with a status of 401 () (me, line 0)
+[Error] ❌ Authentication verification failed: – 401 – "{\"error\":\"Authentication failed\"}"
+	(anonymous function) (index-BoIrvJh_.js:254:187592)
+[Error] ❌ Auth context error:
+Error: Authentication verification failed: 401
+(anonymous function) — index-BoIrvJh_.js:254:187654
+	(anonymous function) (index-BoIrvJh_.js:254:187893)
+[Info] 🔵 MSAL Info: – "[Fri, 19 Sep 2025 14:46:40 GMT] : [] : @azure/msal-common@15.12.0 : Info - CacheManager:getIdToken - Returning ID token" (index-BoIrvJh_.js, line 254)
+[Info] Successfully preconnected to https://aadcdn.msftauth.net/ (x4)
+[Error] Source Map loading errors (x2)
+[Error] Failed to load resource: the server responded with a status of 404 () (oneDs_8f98d4d37166778df9c9.js.map, line 0)
+[Error] Failed to load resource: the server responded with a status of 404 () (oneDs_8f98d4d37166778df9c9.js.map, line 0)
+[Log] true (Me.htm, line 1)
+[Log] Storage access: – false (Me.htm, line 1)
+[Error] Failed to load resource: the server responded with a status of 500 () (insight.splens.app, line 0)

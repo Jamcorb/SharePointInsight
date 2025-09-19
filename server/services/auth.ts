@@ -27,6 +27,8 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
 
     const token = authHeader.split(" ")[1];
     console.log("✅ Processing authentication token");
+    console.log("🔍 Token preview:", token.substring(0, 50) + "...");
+    console.log("🔍 NODE_ENV:", process.env.NODE_ENV);
     
     // Validate Azure AD JWT token with proper security checks
     let validatedPayload;
@@ -37,19 +39,29 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
         requiredScopes: ["User.Read"],
       });
       console.log("✅ JWT token validated successfully");
-    } catch (validationError) {
-      console.error("❌ JWT validation failed:", validationError);
+    } catch (validationError: any) {
+      console.error("❌ JWT validation failed:");
+      console.error("Error type:", validationError?.constructor?.name);
+      console.error("Error message:", validationError?.message);
+      console.error("Full error:", validationError);
+      
+      // Always return detailed errors in development for debugging
+      const detailedError = {
+        error: "JWT validation failed",
+        details: {
+          type: validationError?.constructor?.name || 'Unknown',
+          message: validationError?.message || String(validationError),
+          stack: validationError?.stack?.split('\n').slice(0, 3) || [] // First 3 lines of stack
+        }
+      };
       
       // In production, provide generic error messages to avoid information leakage
       if (process.env.NODE_ENV === 'production') {
         return res.status(401).json({ error: "Authentication failed" });
       }
       
-      // In development, return specific error messages for better debugging
-      if (validationError instanceof TokenValidationError) {
-        return res.status(401).json({ error: "Invalid token: " + validationError.message });
-      }
-      return res.status(401).json({ error: "Token validation failed" });
+      // In development, return detailed error information
+      return res.status(401).json(detailedError);
     }
 
     // Extract user information from validated token
