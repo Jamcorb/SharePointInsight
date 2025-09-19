@@ -6,7 +6,7 @@ interface FooterProps {
 }
 
 export function Footer({ version }: FooterProps) {
-  const [appVersion, setAppVersion] = useState(version || "1.0.0");
+  const [appVersion, setAppVersion] = useState(version || "unknown");
 
   useEffect(() => {
     if (!version) {
@@ -14,7 +14,7 @@ export function Footer({ version }: FooterProps) {
       fetch('/api/version')
         .then(res => res.json())
         .then(data => setAppVersion(data.version))
-        .catch(() => setAppVersion("1.0.0")); // Fallback on error
+        .catch(() => setAppVersion("unknown")); // Fallback on error
     }
   }, [version]);
   return (

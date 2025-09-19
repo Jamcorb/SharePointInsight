@@ -16,6 +16,9 @@ const msalConfig: Configuration = {
     loggerOptions: {
       loggerCallback: (level: any, message: string, containsPii: boolean) => {
         if (containsPii) return;
+        
+        // Only log errors and warnings in production
+        const isDevelopment = import.meta.env.DEV;
         switch (level) {
           case 0: // Error
             console.error("🔴 MSAL Error:", message);
@@ -24,10 +27,10 @@ const msalConfig: Configuration = {
             console.warn("🟡 MSAL Warning:", message);
             break;
           case 2: // Info
-            console.info("🔵 MSAL Info:", message);
+            if (isDevelopment) console.info("🔵 MSAL Info:", message);
             break;
           case 3: // Verbose
-            console.log("🟢 MSAL Verbose:", message);
+            if (isDevelopment) console.log("🟢 MSAL Verbose:", message);
             break;
         }
       },

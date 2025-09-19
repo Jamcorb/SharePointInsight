@@ -12,17 +12,23 @@ app.use((req, res, next) => {
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+  // Only capture response data in development
+  if (process.env.NODE_ENV === 'development') {
+    const originalResJson = res.json;
+    res.json = function (bodyJson, ...args) {
+      capturedJsonResponse = bodyJson;
+      return originalResJson.apply(res, [bodyJson, ...args]);
+    };
+  }
 
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
+      // Basic logging for production
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      
+      // Add response details only in development
+      if (process.env.NODE_ENV === 'development' && capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
@@ -46,18 +52,26 @@ app.use((req, res, next) => {
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    console.error("🚨 Express error handler triggered:");
-    console.error("Status:", status);
-    console.error("Message:", message);
-    console.error("Request URL:", req.url);
-    console.error("Request method:", req.method);
-    console.error("Full error:", err);
-    console.error("Stack trace:", err.stack);
+    // Environment-appropriate logging
+    if (process.env.NODE_ENV === 'development') {
+      console.error("🚨 Express error handler triggered:");
+      console.error("Status:", status);
+      console.error("Message:", message);
+      console.error("Request URL:", req.url);
+      console.error("Request method:", req.method);
+      console.error("Full error:", err);
+      console.error("Stack trace:", err.stack);
+    } else {
+      // Production: Single-line summary without sensitive details
+      console.error(`[${new Date().toISOString()}] ERROR ${req.method} ${req.url} ${status} ${message} [${requestId}]`);
+    }
 
     if (!res.headersSent) {
       res.status(status).json({ 
-        error: message,
+        error: process.env.NODE_ENV === 'development' ? message : "Internal server error",
+        requestId: requestId,
         details: process.env.NODE_ENV === 'development' ? {
           stack: err.stack,
           url: req.url,

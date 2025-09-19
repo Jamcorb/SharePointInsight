@@ -20,12 +20,12 @@ export async function getAppVersion(): Promise<string> {
     console.warn('Failed to fetch app version:', error);
   }
 
-  // Fallback to hardcoded version if API fails
-  return '1.0.0';
+  // Fallback to unknown if API fails
+  return 'unknown';
 }
 
 export function useAppVersion(): string {
-  // For now, return the hardcoded version
+  // Return unknown - component should use getAppVersion() for proper API fetching
   // This can be enhanced with React hooks for real-time updates
-  return '1.0.0';
+  return 'unknown';
 }

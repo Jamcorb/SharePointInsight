@@ -11,12 +11,20 @@ export interface AzureAdConfig {
 }
 
 export function getAzureAdConfig(): AzureAdConfig {
-  // Get client ID from environment or use a default for development
-  const clientId = (process.env.AZURE_AD_CLIENT_ID || process.env.VITE_AZURE_AD_CLIENT_ID || "your-client-id").trim();
+  // Get client ID from environment - REQUIRED for production
+  const clientId = (process.env.AZURE_AD_CLIENT_ID || process.env.VITE_AZURE_AD_CLIENT_ID)?.trim();
   
-  // Get authority from environment
-  const authority = (process.env.AZURE_AD_AUTHORITY || process.env.VITE_AZURE_AD_AUTHORITY || "https://login.microsoftonline.com/common").trim();
+  // Get authority from environment - REQUIRED for production
+  const authority = (process.env.AZURE_AD_AUTHORITY || process.env.VITE_AZURE_AD_AUTHORITY)?.trim();
   
+  // Validate required configuration
+  if (!clientId) {
+    throw new Error('AZURE_AD_CLIENT_ID environment variable is required');
+  }
+  if (!authority) {
+    throw new Error('AZURE_AD_AUTHORITY environment variable is required');
+  }
+
   // Extract tenant ID from authority if available
   let tenantId: string | undefined;
   try {
@@ -55,12 +63,13 @@ export function getAzureAdConfig(): AzureAdConfig {
 export function validateConfiguration(): void {
   const config = getAzureAdConfig();
   
-  if (config.clientId === 'your-client-id') {
-    console.warn('⚠️  Azure AD configuration warning: Using default client ID. Set AZURE_AD_CLIENT_ID environment variable for production.');
-  }
-  
+  // Enhanced production validation
   if (config.authority.includes('common')) {
-    console.warn('⚠️  Azure AD configuration warning: Using common authority. Consider setting a specific tenant for better security.');
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('🔒 SECURITY ERROR: Common authority is not allowed in production. Set AZURE_AD_AUTHORITY to a specific tenant (e.g., https://login.microsoftonline.com/your-tenant-id)');
+    } else {
+      console.warn('⚠️  Azure AD configuration warning: Using common authority. Consider setting a specific tenant for better security.');
+    }
   }
   
   console.log('✅ Azure AD JWT validation configured:', {
