@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AuthContext, getAuthContext } from "@/lib/auth";
 import { loginWithPopup, logout as msalLogout, initializeMsal } from "@/lib/msal";
 import { useToast } from "@/hooks/use-toast";
 
 export function useAuth() {
+  // State hooks first
   const [authContext, setAuthContext] = useState<AuthContext>({
     user: null,
     tenant: null,
@@ -11,9 +12,22 @@ export function useAuth() {
     accessToken: null,
   });
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Ref hooks next (prevent multiple concurrent operations)
+  const authOperationInProgress = useRef(false);
+  const contextRefreshInProgress = useRef(false);
+  
+  // Other hooks last
   const { toast } = useToast();
 
   const refreshAuthContext = useCallback(async () => {
+    // Prevent multiple concurrent context refreshes
+    if (contextRefreshInProgress.current) {
+      console.log("🔒 [AUTH CONTEXT] Context refresh already in progress, skipping...");
+      return;
+    }
+    
+    contextRefreshInProgress.current = true;
     try {
       const context = await getAuthContext();
       setAuthContext(context);
@@ -25,13 +39,22 @@ export function useAuth() {
         isAuthenticated: false,
         accessToken: null,
       });
+    } finally {
+      contextRefreshInProgress.current = false;
     }
   }, []);
 
   const login = useCallback(async () => {
+    // Prevent multiple concurrent login attempts
+    if (authOperationInProgress.current) {
+      console.log("🔒 [AUTH] Authentication already in progress, ignoring additional login attempt");
+      return;
+    }
+    
     const timestamp = new Date().toISOString();
     try {
       console.log(`[${timestamp}] 🚀 [LOGIN] Starting login process...`);
+      authOperationInProgress.current = true;
       setIsLoading(true);
       // Use popup flow for better SPA experience - preserves application state
       const response = await loginWithPopup();
@@ -77,6 +100,7 @@ export function useAuth() {
       });
     } finally {
       console.log(`[${timestamp}] 🏁 [LOGIN] Login process completed, setting loading to false`);
+      authOperationInProgress.current = false;
       setIsLoading(false);
     }
   }, [toast, refreshAuthContext]);
