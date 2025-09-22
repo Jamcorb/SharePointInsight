@@ -17,24 +17,14 @@ const msalConfig: Configuration = {
       loggerCallback: (level: any, message: string, containsPii: boolean) => {
         if (containsPii) return;
         
-        // Only log errors and warnings in production
-        const isDevelopment = import.meta.env.DEV;
-        switch (level) {
-          case 0: // Error
-            console.error("🔴 MSAL Error:", message);
-            break;
-          case 1: // Warning
-            console.warn("🟡 MSAL Warning:", message);
-            break;
-          case 2: // Info
-            if (isDevelopment) console.info("🔵 MSAL Info:", message);
-            break;
-          case 3: // Verbose
-            if (isDevelopment) console.log("🟢 MSAL Verbose:", message);
-            break;
-        }
+        const timestamp = new Date().toISOString();
+        const levelMap: Record<number, string> = { 0: '🔴 ERROR', 1: '🟡 WARN', 2: '🔵 INFO', 3: '🟢 VERBOSE' };
+        
+        // Log all levels for authentication debugging
+        console.log(`[${timestamp}] [MSAL ${levelMap[level] || 'UNKNOWN'}] ${message}`);
       },
       piiLoggingEnabled: false,
+      logLevel: 3, // Maximum verbosity (0=Error, 1=Warning, 2=Info, 3=Verbose)
     },
   },
 };
@@ -97,10 +87,17 @@ export async function initializeMsal(): Promise<void> {
 // Login with popup
 export async function loginWithPopup(): Promise<AuthenticationResult> {
   try {
+    console.log("🚀 [AUTH] Starting popup login with request:", loginRequest);
     const response = await msalInstance.loginPopup(loginRequest);
+    console.log("✅ [AUTH] Popup login successful:", {
+      account: response.account?.username,
+      tenantId: response.account?.tenantId,
+      scopes: response.scopes,
+      tokenType: response.tokenType
+    });
     return response;
   } catch (error) {
-    console.error("Login failed:", error);
+    console.error("❌ [AUTH] Popup login failed:", error);
     throw error;
   }
 }
@@ -118,18 +115,36 @@ export async function loginWithRedirect(): Promise<void> {
 // Get access token silently (no automatic popup fallback)
 export async function getAccessTokenSilent(): Promise<string | null> {
   try {
+    console.log("🔍 [AUTH] Attempting silent token acquisition...");
     const accounts = msalInstance.getAllAccounts();
+    console.log("🔍 [AUTH] Found accounts:", accounts.length);
+    
     if (accounts.length === 0) {
-      console.warn("No accounts found, user needs to login");
+      console.warn("⚠️ [AUTH] No accounts found, user needs to login");
       return null;
     }
 
+    console.log("🔍 [AUTH] Using account:", {
+      username: accounts[0].username,
+      tenantId: accounts[0].tenantId,
+      environment: accounts[0].environment
+    });
+    
     silentRequest.account = accounts[0];
+    console.log("🔍 [AUTH] Silent request:", {
+      scopes: silentRequest.scopes,
+      account: accounts[0].username
+    });
+    
     const response = await msalInstance.acquireTokenSilent(silentRequest);
-    console.log("✅ Access token acquired silently");
+    console.log("✅ [AUTH] Silent token acquisition successful:", {
+      scopes: response.scopes,
+      expiresOn: response.expiresOn,
+      tokenType: response.tokenType
+    });
     return response.accessToken;
   } catch (error) {
-    console.error("Silent token acquisition failed:", error);
+    console.error("❌ [AUTH] Silent token acquisition failed:", error);
     // Return null instead of triggering popup - let calling code decide what to do
     return null;
   }
@@ -148,7 +163,13 @@ export async function logout(): Promise<void> {
 // Check if user is authenticated
 export function isAuthenticated(): boolean {
   const accounts = msalInstance.getAllAccounts();
-  return accounts.length > 0;
+  const authenticated = accounts.length > 0;
+  console.log("🔍 [AUTH] Authentication check:", {
+    accountCount: accounts.length,
+    authenticated,
+    accounts: accounts.map(acc => ({ username: acc.username, tenantId: acc.tenantId }))
+  });
+  return authenticated;
 }
 
 // Get current account

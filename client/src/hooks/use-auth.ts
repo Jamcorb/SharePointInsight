@@ -29,36 +29,54 @@ export function useAuth() {
   }, []);
 
   const login = useCallback(async () => {
+    const timestamp = new Date().toISOString();
     try {
+      console.log(`[${timestamp}] 🚀 [LOGIN] Starting login process...`);
       setIsLoading(true);
       // Use popup flow for better SPA experience - preserves application state
       const response = await loginWithPopup();
       
       if (response) {
-        console.log("✅ Authentication popup successful");
+        console.log(`[${timestamp}] ✅ [LOGIN] Authentication popup successful, account:`, {
+          username: response.account?.username,
+          tenantId: response.account?.tenantId
+        });
         toast({
           title: "Signed in successfully",
           description: "Welcome to SP Reports Hub",
         });
         
         // Wait a moment for tokens to be available, then refresh auth context
+        console.log(`[${timestamp}] 🔍 [LOGIN] Waiting 500ms then refreshing auth context...`);
         setTimeout(async () => {
+          console.log(`[${new Date().toISOString()}] 🔄 [LOGIN] Refreshing authentication context...`);
           await refreshAuthContext();
           
           // Navigate to builder if on login page
-          if (window.location.pathname === "/" || window.location.pathname === "/login") {
+          const currentPath = window.location.pathname;
+          console.log(`[${new Date().toISOString()}] 🔍 [LOGIN] Current path: ${currentPath}`);
+          if (currentPath === "/" || currentPath === "/login") {
+            console.log(`[${new Date().toISOString()}] 📍 [LOGIN] Navigating to /builder...`);
             window.location.href = "/builder";
           }
         }, 500);
+      } else {
+        console.warn(`[${timestamp}] ⚠️ [LOGIN] Login response was null or undefined`);
       }
     } catch (error: any) {
-      console.error("Login failed:", error);
+      console.error(`[${timestamp}] ❌ [LOGIN] Login failed:`, {
+        error: error.message,
+        errorCode: error.errorCode,
+        subError: error.subError,
+        correlationId: error.correlationId
+      });
       toast({
         title: "Sign in failed",
         description: error.message || "Please try again",
         variant: "destructive",
       });
     } finally {
+      console.log(`[${timestamp}] 🏁 [LOGIN] Login process completed, setting loading to false`);
       setIsLoading(false);
     }
   }, [toast, refreshAuthContext]);

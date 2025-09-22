@@ -295,16 +295,16 @@ export default function Builder() {
     setShowSaveDialog(true);
   }, []);
 
-  // TEMPORARY: Allow builder access without authentication for debugging
-  // if (!user || !tenant || !accessToken) {
-  //   return null;
-  // }
+  if (!user || !tenant || !accessToken) {
+    console.log("🔍 [BUILDER] Authentication check failed:", { user: !!user, tenant: !!tenant, accessToken: !!accessToken });
+    return null;
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background">
       <TopNavigation
-        user={user || { id: 'debug', upn: 'debug@test.com', tenantId: 'debug', name: 'Debug User', email: 'debug@test.com' }}
-        tenant={tenant || { id: 'debug', name: 'Debug Tenant', domain: 'debug.com' }}
+        user={user}
+        tenant={tenant}
         currentReportName={currentReportName}
         onSaveView={handleSaveView}
         onLoadReport={() => setShowLoadDialog(true)}
@@ -315,17 +315,7 @@ export default function Builder() {
       />
       
       <div className="flex flex-1 overflow-hidden">
-        {/* TEMPORARY: Show placeholder when no auth token available */}
-        {accessToken ? (
-          <SourceBrowser accessToken={accessToken} />
-        ) : (
-          <div className="w-80 bg-card border-r p-4 flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <p>Authentication required</p>
-              <p className="text-sm">to browse SharePoint sources</p>
-            </div>
-          </div>
-        )}
+        <SourceBrowser accessToken={accessToken} />
         
         <ReportCanvas
           droppedSources={droppedSources}
