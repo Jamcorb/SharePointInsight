@@ -28,6 +28,8 @@ function UnauthenticatedRoutes() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
+      {/* TEMPORARY: Allow builder access without authentication for debugging */}
+      <Route path="/builder" component={Builder} />
       <Route component={() => <Redirect to="/login" />} />
     </Switch>
   );
