@@ -9,7 +9,7 @@ const msalConfig: Configuration = {
     navigateToLoginRequestUrl: false, // Important for SPA
   },
   cache: {
-    cacheLocation: "sessionStorage",
+    cacheLocation: "localStorage", // Better for popup flow and cross-tab SSO
     storeAuthStateInCookie: false,
   },
   system: {

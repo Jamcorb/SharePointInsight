@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { AuthContext, getAuthContext } from "@/lib/auth";
-import { loginWithRedirect, logout as msalLogout, initializeMsal } from "@/lib/msal";
+import { loginWithPopup, logout as msalLogout, initializeMsal } from "@/lib/msal";
 import { useToast } from "@/hooks/use-toast";
 
 export function useAuth() {
@@ -31,9 +31,24 @@ export function useAuth() {
   const login = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Use redirect flow instead of popup for better SPA compatibility
-      await loginWithRedirect();
-      // Note: loginWithRedirect doesn't return - the page redirects to Azure AD
+      // Use popup flow for better SPA experience - preserves application state
+      const response = await loginWithPopup();
+      
+      if (response) {
+        console.log("✅ Authentication popup successful");
+        toast({
+          title: "Signed in successfully",
+          description: "Welcome to SP Reports Hub",
+        });
+        
+        // Refresh auth context after successful login
+        await refreshAuthContext();
+        
+        // Navigate to builder if on login page
+        if (window.location.pathname === "/" || window.location.pathname === "/login") {
+          window.location.href = "/builder";
+        }
+      }
     } catch (error: any) {
       console.error("Login failed:", error);
       toast({
@@ -41,9 +56,10 @@ export function useAuth() {
         description: error.message || "Please try again",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, refreshAuthContext]);
 
   const logout = useCallback(async () => {
     try {
@@ -74,24 +90,7 @@ export function useAuth() {
       try {
         await initializeMsal();
         
-        // Handle redirect response after returning from Azure AD
-        const { msalInstance } = await import("@/lib/msal");
-        const response = await msalInstance.handleRedirectPromise();
-        
-        if (response) {
-          console.log("✅ Authentication redirect successful");
-          toast({
-            title: "Signed in successfully",
-            description: "Welcome to SP Reports Hub",
-          });
-          
-          // Immediately redirect to builder after successful authentication
-          // Don't wait for backend verification to prevent redirect delays
-          if (window.location.pathname === "/" || window.location.pathname === "/login") {
-            window.location.href = "/builder";
-            return; // Exit early, don't continue with auth context refresh
-          }
-        }
+        // Initialize authentication context (no redirect handling needed for popup flow)
         
         await refreshAuthContext();
       } catch (error) {
