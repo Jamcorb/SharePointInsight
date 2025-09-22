@@ -87,22 +87,37 @@ export async function initializeMsal(): Promise<void> {
   }
 }
 
-// Login with popup (enhanced with fallback handling)
+// Login with popup (enhanced with robust error handling)
 export async function loginWithPopup(): Promise<AuthenticationResult> {
   try {
     console.log("🚀 [AUTH] Starting popup login with request:", loginRequest);
     
-    // Enhanced popup configuration to avoid blocking
+    // Try silent token acquisition first
+    console.log("🔕 [AUTH] Attempting silent token acquisition first...");
+    try {
+      const silentRequest = {
+        ...loginRequest,
+        account: msalInstance.getAllAccounts()[0],
+      };
+      const silentResult = await msalInstance.acquireTokenSilent(silentRequest);
+      console.log("✅ [AUTH] Silent token acquisition successful!");
+      return silentResult;
+    } catch (silentError: any) {
+      console.log("🔕 [AUTH] Silent token acquisition failed, proceeding with popup:", silentError.errorCode);
+    }
+    
+    // Enhanced popup configuration with better sizing and consent handling
     const popupRequest = {
       ...loginRequest,
+      prompt: "select_account", // Force account selection to avoid consent issues
       popupWindowAttributes: {
         popupSize: {
-          height: 600,
-          width: 500,
+          height: 700, // Increased height for consent screens
+          width: 600,  // Increased width for better visibility
         },
         popupPosition: {
-          top: Math.max(0, (screen.height - 600) / 2),
-          left: Math.max(0, (screen.width - 500) / 2),
+          top: Math.max(0, (screen.height - 700) / 2),
+          left: Math.max(0, (screen.width - 600) / 2),
         },
       },
     };
@@ -110,6 +125,7 @@ export async function loginWithPopup(): Promise<AuthenticationResult> {
     console.log("🔍 [AUTH] Using enhanced popup configuration:", {
       height: popupRequest.popupWindowAttributes.popupSize?.height,
       width: popupRequest.popupWindowAttributes.popupSize?.width,
+      prompt: popupRequest.prompt,
       centered: true
     });
     
@@ -129,13 +145,22 @@ export async function loginWithPopup(): Promise<AuthenticationResult> {
       correlationId: error.correlationId
     });
     
-    // If popup is blocked due to nested context, provide helpful error
-    if (error.errorCode === 'block_nested_popups') {
-      console.error("🚨 [AUTH] Popup blocked - nested popup detected. This may happen in embedded contexts.");
+    // Enhanced error handling for common issues
+    if (error.errorCode === 'user_cancelled') {
+      console.error("🚨 [AUTH] User cancelled authentication or popup was closed");
+      console.log("📝 [AUTH] This could be due to:");
+      console.log("1. Multiple consent screens requiring user interaction");
+      console.log("2. Popup blocker preventing proper window display");
+      console.log("3. User manually closing the authentication window");
+    } else if (error.errorCode === 'block_nested_popups') {
+      console.error("🚨 [AUTH] Popup blocked - nested popup detected");
       console.log("📝 [AUTH] Possible solutions:");
       console.log("1. Ensure the application is not running in an iframe");
       console.log("2. Check browser popup blocker settings");
       console.log("3. Try using redirect flow instead");
+    } else if (error.errorCode === 'interaction_in_progress') {
+      console.error("🚨 [AUTH] Multiple authentication attempts detected");
+      console.log("📝 [AUTH] Please wait for current authentication to complete");
     }
     
     throw error;
