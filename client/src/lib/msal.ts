@@ -7,12 +7,15 @@ const msalConfig: Configuration = {
     redirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
     postLogoutRedirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
     navigateToLoginRequestUrl: false, // Important for SPA
+    supportsNestedAppAuth: false, // Disable nested popup detection
   },
   cache: {
     cacheLocation: "localStorage", // Better for popup flow and cross-tab SSO
     storeAuthStateInCookie: false,
   },
   system: {
+    iframeHashTimeout: 10000, // Increase timeout for popup handling
+    loadFrameTimeout: 10000,
     loggerOptions: {
       loggerCallback: (level: any, message: string, containsPii: boolean) => {
         if (containsPii) return;
@@ -84,11 +87,33 @@ export async function initializeMsal(): Promise<void> {
   }
 }
 
-// Login with popup
+// Login with popup (enhanced with fallback handling)
 export async function loginWithPopup(): Promise<AuthenticationResult> {
   try {
     console.log("🚀 [AUTH] Starting popup login with request:", loginRequest);
-    const response = await msalInstance.loginPopup(loginRequest);
+    
+    // Enhanced popup configuration to avoid blocking
+    const popupRequest = {
+      ...loginRequest,
+      popupWindowAttributes: {
+        popupSize: {
+          height: 600,
+          width: 500,
+        },
+        popupPosition: {
+          top: Math.max(0, (screen.height - 600) / 2),
+          left: Math.max(0, (screen.width - 500) / 2),
+        },
+      },
+    };
+    
+    console.log("🔍 [AUTH] Using enhanced popup configuration:", {
+      height: popupRequest.popupWindowAttributes.popupSize?.height,
+      width: popupRequest.popupWindowAttributes.popupSize?.width,
+      centered: true
+    });
+    
+    const response = await msalInstance.loginPopup(popupRequest);
     console.log("✅ [AUTH] Popup login successful:", {
       account: response.account?.username,
       tenantId: response.account?.tenantId,
@@ -96,8 +121,23 @@ export async function loginWithPopup(): Promise<AuthenticationResult> {
       tokenType: response.tokenType
     });
     return response;
-  } catch (error) {
-    console.error("❌ [AUTH] Popup login failed:", error);
+  } catch (error: any) {
+    console.error("❌ [AUTH] Popup login failed:", {
+      error: error.message,
+      errorCode: error.errorCode,
+      subError: error.subError,
+      correlationId: error.correlationId
+    });
+    
+    // If popup is blocked due to nested context, provide helpful error
+    if (error.errorCode === 'block_nested_popups') {
+      console.error("🚨 [AUTH] Popup blocked - nested popup detected. This may happen in embedded contexts.");
+      console.log("📝 [AUTH] Possible solutions:");
+      console.log("1. Ensure the application is not running in an iframe");
+      console.log("2. Check browser popup blocker settings");
+      console.log("3. Try using redirect flow instead");
+    }
+    
     throw error;
   }
 }
