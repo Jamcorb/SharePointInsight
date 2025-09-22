@@ -39,7 +39,27 @@ const msalConfig: Configuration = {
   },
 };
 
-export const msalInstance = new PublicClientApplication(msalConfig);
+// Global singleton pattern to prevent multiple MSAL instances across hot reloads
+declare global {
+  interface Window {
+    __msalInstance?: PublicClientApplication;
+  }
+}
+
+export const msalInstance = (() => {
+  // Check if there's already a global instance
+  if (typeof window !== 'undefined' && window.__msalInstance) {
+    return window.__msalInstance;
+  }
+  
+  // Create new instance and store globally
+  const instance = new PublicClientApplication(msalConfig);
+  if (typeof window !== 'undefined') {
+    window.__msalInstance = instance;
+  }
+  
+  return instance;
+})();
 
 export const loginRequest = {
   scopes: [
@@ -55,10 +75,18 @@ export const silentRequest = {
   account: null as any,
 };
 
-// Initialize MSAL
+// Initialize MSAL (singleton)
+let _msalInitialized = false;
+
 export async function initializeMsal(): Promise<void> {
+  if (_msalInitialized) {
+    console.log("✅ MSAL already initialized");
+    return;
+  }
+  
   try {
     await msalInstance.initialize();
+    _msalInitialized = true;
     console.log("✅ MSAL initialized successfully");
   } catch (error) {
     console.error("❌ MSAL initialization failed:", error);
@@ -87,7 +115,7 @@ export async function loginWithRedirect(): Promise<void> {
   }
 }
 
-// Get access token silently
+// Get access token silently (no automatic popup fallback)
 export async function getAccessTokenSilent(): Promise<string | null> {
   try {
     const accounts = msalInstance.getAllAccounts();
@@ -102,16 +130,8 @@ export async function getAccessTokenSilent(): Promise<string | null> {
     return response.accessToken;
   } catch (error) {
     console.error("Silent token acquisition failed:", error);
-    
-    // If silent acquisition fails, try with popup
-    try {
-      console.log("🔄 Attempting token acquisition with popup");
-      const response = await msalInstance.acquireTokenPopup(loginRequest);
-      return response.accessToken;
-    } catch (popupError) {
-      console.error("Popup token acquisition failed:", popupError);
-      return null;
-    }
+    // Return null instead of triggering popup - let calling code decide what to do
+    return null;
   }
 }
 

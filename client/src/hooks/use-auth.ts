@@ -41,13 +41,15 @@ export function useAuth() {
           description: "Welcome to SP Reports Hub",
         });
         
-        // Refresh auth context after successful login
-        await refreshAuthContext();
-        
-        // Navigate to builder if on login page
-        if (window.location.pathname === "/" || window.location.pathname === "/login") {
-          window.location.href = "/builder";
-        }
+        // Wait a moment for tokens to be available, then refresh auth context
+        setTimeout(async () => {
+          await refreshAuthContext();
+          
+          // Navigate to builder if on login page
+          if (window.location.pathname === "/" || window.location.pathname === "/login") {
+            window.location.href = "/builder";
+          }
+        }, 500);
       }
     } catch (error: any) {
       console.error("Login failed:", error);
