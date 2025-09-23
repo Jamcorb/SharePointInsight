@@ -54,9 +54,15 @@ export async function getAuthContext(): Promise<AuthContext> {
     // Verify authentication with backend
     const response = await fetch("/api/auth/me", {
       headers: {
-        Authorization: `Bearer ${accessToken.substring(0, 20)}...(truncated)`,
+        // Send the full access token to the API. Only log a redacted preview to avoid
+        // accidental truncation bugs while still keeping sensitive data out of logs.
+        Authorization: `Bearer ${accessToken}`,
       },
     });
+
+    console.log(
+      `[${timestamp}] 🔍 [AUTH CONTEXT] Sent Authorization header with bearer token (preview): ${accessToken.substring(0, 20)}...`
+    );
 
     console.log(`[${timestamp}] 🔍 [AUTH CONTEXT] Backend response status: ${response.status}`);
     if (!response.ok) {

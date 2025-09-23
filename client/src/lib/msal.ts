@@ -7,7 +7,6 @@ const msalConfig: Configuration = {
     redirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
     postLogoutRedirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
     navigateToLoginRequestUrl: false, // Important for SPA
-    supportsNestedAppAuth: false, // Disable nested popup detection
   },
   cache: {
     cacheLocation: "localStorage", // Better for popup flow and cross-tab SSO
@@ -17,6 +16,7 @@ const msalConfig: Configuration = {
     iframeHashTimeout: 10000,
     loadFrameTimeout: 10000,
     asyncPopups: false, // Disable async popups to prevent nested popup issues
+    allowRedirectInIframe: true, // Required when the app runs inside embedded SharePoint canvases
     loggerOptions: {
       loggerCallback: (level: any, message: string, containsPii: boolean) => {
         if (containsPii) return;
@@ -77,9 +77,20 @@ export async function initializeMsal(): Promise<void> {
     console.log("✅ MSAL already initialized");
     return;
   }
-  
+
   try {
     await msalInstance.initialize();
+    const redirectResult = await msalInstance.handleRedirectPromise();
+    if (redirectResult) {
+      console.log("✅ [MSAL] Redirect login completed successfully:", {
+        account: redirectResult.account?.username,
+        tenantId: redirectResult.account?.tenantId,
+        scopes: redirectResult.scopes,
+        tokenType: redirectResult.tokenType,
+      });
+    } else {
+      console.log("ℹ️ [MSAL] No redirect interaction in progress");
+    }
     _msalInitialized = true;
     console.log("✅ MSAL initialized successfully");
   } catch (error) {
