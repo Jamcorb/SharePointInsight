@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { AuthContext, getAuthContext } from "@/lib/auth";
-import { loginWithPopup, logout as msalLogout, initializeMsal } from "@/lib/msal";
+import { loginWithPopup, loginWithRedirect, logout as msalLogout, initializeMsal } from "@/lib/msal";
 import { useToast } from "@/hooks/use-toast";
 
 export function useAuth() {
@@ -50,27 +50,63 @@ export function useAuth() {
       console.log("🔒 [AUTH] Authentication already in progress, ignoring additional login attempt");
       return;
     }
-    
-    // Check if we're in a popup window to prevent nested popup errors
-    const isInPopup = window.opener && window.opener !== window;
-    if (isInPopup) {
-      console.warn("⚠️ [AUTH] Cannot authenticate from within a popup window");
+
+    const startRedirectLogin = async (reason: string) => {
+      const redirectTimestamp = new Date().toISOString();
+      console.warn(`[${redirectTimestamp}] 🔁 [LOGIN] Switching to redirect flow: ${reason}`);
       toast({
-        title: "Authentication Error",
-        description: "Please close this popup and sign in from the main window.",
-        variant: "destructive",
+        title: "Redirecting to Microsoft",
+        description: "We'll take you to Microsoft to finish signing in.",
       });
+
+      authOperationInProgress.current = true;
+      setIsLoading(true);
+
+      try {
+        await loginWithRedirect();
+      } catch (redirectError: any) {
+        console.error(`[${redirectTimestamp}] ❌ [LOGIN] Redirect login failed:`, {
+          error: redirectError.message,
+          errorCode: redirectError.errorCode,
+          subError: redirectError.subError,
+          correlationId: redirectError.correlationId
+        });
+        toast({
+          title: "Sign in failed",
+          description: redirectError.message || "Please try again",
+          variant: "destructive",
+        });
+        throw redirectError;
+      } finally {
+        console.log(`[${redirectTimestamp}] 🏁 [LOGIN] Redirect flow completed`);
+        authOperationInProgress.current = false;
+        setIsLoading(false);
+      }
+    };
+
+    const isInPopup = window.opener && window.opener !== window;
+    const isEmbeddedFrame = window.self !== window.top;
+
+    if (isInPopup) {
+      await startRedirectLogin("application is running inside a popup window");
       return;
     }
-    
+
+    if (isEmbeddedFrame) {
+      await startRedirectLogin("application is hosted inside an iframe or embedded canvas");
+      return;
+    }
+
     const timestamp = new Date().toISOString();
+    let redirectFallbackReason: string | null = null;
+
     try {
       console.log(`[${timestamp}] 🚀 [LOGIN] Starting login process...`);
       authOperationInProgress.current = true;
       setIsLoading(true);
-      // Use popup flow for better SPA experience - preserves application state
+
       const response = await loginWithPopup();
-      
+
       if (response) {
         console.log(`[${timestamp}] ✅ [LOGIN] Authentication popup successful, account:`, {
           username: response.account?.username,
@@ -80,14 +116,12 @@ export function useAuth() {
           title: "Signed in successfully",
           description: "Welcome to SP Reports Hub",
         });
-        
-        // Wait a moment for tokens to be available, then refresh auth context
+
         console.log(`[${timestamp}] 🔍 [LOGIN] Waiting 500ms then refreshing auth context...`);
         setTimeout(async () => {
           console.log(`[${new Date().toISOString()}] 🔄 [LOGIN] Refreshing authentication context...`);
           await refreshAuthContext();
-          
-          // Navigate to builder if on login page
+
           const currentPath = window.location.pathname;
           console.log(`[${new Date().toISOString()}] 🔍 [LOGIN] Current path: ${currentPath}`);
           if (currentPath === "/" || currentPath === "/login") {
@@ -105,15 +139,26 @@ export function useAuth() {
         subError: error.subError,
         correlationId: error.correlationId
       });
-      toast({
-        title: "Sign in failed",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
+
+      if (error?.errorCode === "block_nested_popups") {
+        redirectFallbackReason = "MSAL blocked the popup because the browser detected an embedded context";
+      } else if (error?.errorCode === "popup_window_error") {
+        redirectFallbackReason = "the browser could not open the authentication popup";
+      } else {
+        toast({
+          title: "Sign in failed",
+          description: error.message || "Please try again",
+          variant: "destructive",
+        });
+      }
     } finally {
       console.log(`[${timestamp}] 🏁 [LOGIN] Login process completed, setting loading to false`);
       authOperationInProgress.current = false;
       setIsLoading(false);
+    }
+
+    if (redirectFallbackReason) {
+      await startRedirectLogin(redirectFallbackReason);
     }
   }, [toast, refreshAuthContext]);
 
