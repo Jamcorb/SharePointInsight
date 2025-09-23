@@ -123,16 +123,18 @@ export class GraphService {
 
 
   async searchSites(query: string = ""): Promise<SharePointSite[]> {
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery) {
+      console.log("ℹ️ Skipping SharePoint site search due to empty query");
+      return [];
+    }
+
     return this.executeWithRetry(async () => {
-      console.log("🔍 Searching SharePoint sites with query:", query);
-      
-      let apiCall = this.client.api("/sites");
-      
-      if (query.trim()) {
-        // Use search with query
-        apiCall = apiCall.search(query);
-      }
-      
+      console.log("🔍 Searching SharePoint sites with query:", trimmedQuery);
+
+      const apiCall = this.client.api("/sites").search(trimmedQuery);
+
       const response = await apiCall
         .select("id,webUrl,displayName,description")
         .top(50)

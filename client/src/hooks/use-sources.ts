@@ -12,21 +12,27 @@ export function useSources({ accessToken }: UseSourcesProps) {
 
   // Search SharePoint sites
   const useSearchSites = (query: string = "") => {
+    const trimmedQuery = query.trim();
+
     return useQuery({
       queryKey: ["/api/sites", { query }],
       queryFn: async () => {
+        if (trimmedQuery.length === 0) {
+          return [];
+        }
+
         if (!accessToken) throw new Error("No access token");
-        
-        const response = await fetch(`/api/sites?query=${encodeURIComponent(query)}`, {
+
+        const response = await fetch(`/api/sites?query=${encodeURIComponent(trimmedQuery)}`, {
           headers: createAuthHeaders(accessToken),
         });
-        
+
         if (!response.ok) throw new Error("Failed to search sites");
-        
+
         const data = await response.json();
         return data.sites as SharePointSite[];
       },
-      enabled: !!accessToken,
+      enabled: !!accessToken && trimmedQuery.length > 0,
       staleTime: 5 * 60 * 1000, // 5 minutes
     });
   };
