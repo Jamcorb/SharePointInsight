@@ -51,6 +51,18 @@ export function useAuth() {
       return;
     }
     
+    // Check if we're in a popup window to prevent nested popup errors
+    const isInPopup = window.opener && window.opener !== window;
+    if (isInPopup) {
+      console.warn("⚠️ [AUTH] Cannot authenticate from within a popup window");
+      toast({
+        title: "Authentication Error",
+        description: "Please close this popup and sign in from the main window.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const timestamp = new Date().toISOString();
     try {
       console.log(`[${timestamp}] 🚀 [LOGIN] Starting login process...`);

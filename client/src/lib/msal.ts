@@ -14,8 +14,9 @@ const msalConfig: Configuration = {
     storeAuthStateInCookie: false,
   },
   system: {
-    iframeHashTimeout: 10000, // Increase timeout for popup handling
+    iframeHashTimeout: 10000,
     loadFrameTimeout: 10000,
+    asyncPopups: false, // Disable async popups to prevent nested popup issues
     loggerOptions: {
       loggerCallback: (level: any, message: string, containsPii: boolean) => {
         if (containsPii) return;
