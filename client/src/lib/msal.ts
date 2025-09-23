@@ -4,8 +4,8 @@ const msalConfig: Configuration = {
   auth: {
     clientId: import.meta.env.VITE_AZURE_AD_CLIENT_ID!.trim(),
     authority: import.meta.env.VITE_AZURE_AD_AUTHORITY!.trim(),
-    redirectUri: `${window.location.origin}/redirect.html`, // Dedicated redirect page to prevent app reload
-    postLogoutRedirectUri: window.location.origin,
+    redirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
+    postLogoutRedirectUri: import.meta.env.VITE_AZURE_AD_REDIRECT_URI!.trim(),
     navigateToLoginRequestUrl: false, // Important for SPA
     supportsNestedAppAuth: false, // Disable nested popup detection
   },
